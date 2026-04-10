@@ -1,72 +1,107 @@
-This is a Kotlin Multiplatform project targeting Web, Desktop (JVM), Server.
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-    - [commonMain](./composeApp/src/commonMain/kotlin) is for code that’s common for all targets.
-    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-      For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-      the [iosMain](./composeApp/src/iosMain/kotlin) folder would be the right place for such calls.
-      Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./composeApp/src/jvmMain/kotlin)
-      folder is the appropriate location.
+# ZenTrack 🧘‍♂️
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+ZenTrack es una plataforma minimalista de gestión de proyectos diseñada para equipos ágiles. Nuestro objetivo es reducir el ruido visual de las herramientas tradicionales y fomentar la disciplina de desarrollo integrando la gestión de tareas directamente con nuestro flujo de **GitFlow**.
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
-  The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+## 🚀 Características Principales
 
-* [/webApp](./webApp) contains web React application. It uses the Kotlin/JS library produced
-  by the [shared](./shared) module.
+- **Workspaces Aislados:** Cada cliente/entorno tiene su propio espacio de trabajo con sus proyectos y flujos de estados personalizados.
+    
+- **Integración GitFlow Automatizada:** Al crear una tarea (ej. `ZTK-24`), el sistema genera automáticamente la rama correspondiente en GitLab/GitHub.
+    
+- **Actualización por Commits:** Hacer _push_ a la rama de una tarea mueve automáticamente la tarjeta a la columna "In Progress".
+    
+- **Sprints Transversales:** Agrupa tareas de diferentes proyectos de un mismo Workspace en un único ciclo de desarrollo.
+    
+- **Multiplataforma:** Experiencia nativa en Escritorio y Web bajo los principios de diseño de Material 3.
+    
 
-### Build and Run Desktop (JVM) Application
+## 🛠️ Stack Tecnológico
 
-To build and run the development version of the desktop app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
+Este proyecto es un monorepo que utiliza el ecosistema de Kotlin para compartir lógica entre el backend y los clientes, combinado con una aplicación web moderna.
 
-- on macOS/Linux
-  ```shell
-  ./gradlew :composeApp:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :composeApp:run
-  ```
+- **Backend:** Ktor (Kotlin) + REST API.
+    
+- **Base de Datos:** PostgreSQL + ORM (Exposed/Ktorm).
+    
+- **Core Compartido:** Kotlin Multiplatform (KMP) para modelos de datos y cliente HTTP (Ktor Client).
+    
+- **Frontend Escritorio:** Compose Multiplatform (JVM) + Material 3.
+    
+- **Frontend Web:** React + TypeScript + Zustand + MUI (Material 3).
+    
 
-### Build and Run Server
+## 📂 Estructura del Monorepo
 
-To build and run the development version of the server, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
+Plaintext
 
-- on macOS/Linux
-  ```shell
-  ./gradlew :server:run
-  ```
-- on Windows
-  ```shell
-  .\gradlew.bat :server:run
-  ```
+```
+zentrackapp/
+├── backend/                  # API Server (Ktor). Lógica de negocio e integraciones Git.
+├── shared/                   # KMP Module. Modelos compartidos y lógica de red.
+├── composeApp/               # App nativa de escritorio (Windows/Mac/Linux).
+└── webApp/                   # Aplicación Web (React).
+```
 
-### Build and Run Web Application
+## 🏁 Primeros Pasos (Setup Local)
 
-To build and run the development version of the web app, use the run configuration from the run widget
-in your IDE’s toolbar or run it directly from the terminal:
+### Requisitos Previos
 
-1. Install [Node.js](https://nodejs.org/en/download) (which includes `npm`)
-2. Build Kotlin/JS shared code:
-    - on macOS/Linux
-      ```shell
-      ./gradlew :shared:jsBrowserDevelopmentLibraryDistribution
-      ```
-    - on Windows
-      ```shell
-      .\gradlew.bat :shared:jsBrowserDevelopmentLibraryDistribution
-      ```
-3. Build and run the web application
-   ```shell
-   npm install
-   npm run start
-   ```
+- JDK 17 o superior.
+    
+- Node.js (v18+) y npm/yarn (para la web).
+    
+- PostgreSQL ejecutándose en local (puerto 5432).
+    
+- IntelliJ IDEA (Recomendado para Kotlin/KMP) y VSCode/Cursor (para React).
+    
 
----
+### 1. Base de Datos
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+Crea una base de datos local llamada `zentrack_db`. Las credenciales por defecto para desarrollo están en `backend/src/main/resources/application.conf`.
+
+### 2. Levantar el Backend (Ktor)
+
+Navega a la carpeta del backend y ejecuta la aplicación:
+
+Bash
+
+```
+cd backend
+./gradlew run
+```
+
+_El servidor estará disponible en `http://localhost:8080`._
+
+### 3. Levantar la App de Escritorio (Compose)
+
+Para ejecutar la aplicación nativa desde tu máquina:
+
+Bash
+
+```
+./gradlew :composeApp:run
+```
+
+### 4. Levantar la Web App (React)
+
+Navega a la carpeta web, instala las dependencias y arranca el servidor de desarrollo:
+
+Bash
+
+```
+cd webApp
+npm install
+npm run dev
+```
+
+## 📜 Reglas de Trabajo y GitFlow (¡Importante!)
+
+Para mantener la disciplina en el equipo, **nadie debe crear ramas manualmente a menos que sea estrictamente necesario o el sistema falle.** 1. **Creación:** Todas las ramas de nuevas funcionalidades o bugs deben generarse a través de la UI de ZenTrack al crear la tarea. 2. **Nomenclatura:** El formato estricto que utiliza la plataforma es `[tipo]/[ID-TAREA]/[descripcion]`.
+
+- _Ejemplo:_ `feature/ZTK-42/login-oauth`
+    
+
+3. **Commits:** Asegúrate de hacer _push_ a tu rama remota. ZenTrack escuchará el webhook de GitLab/GitHub y pasará tu tarea a "In Progress" automáticamente.
+    
+4. **Merge:** Los Pull Requests/Merge Requests deben apuntar a la rama `develop` (o a la rama de la tarea padre si es una subtarea). Nunca se hace merge directo a `main`.
