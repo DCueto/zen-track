@@ -9,12 +9,32 @@ ZenTrack utilizará una arquitectura cliente-servidor basada en el ecosistema Ko
     
 - **Base de Datos (PostgreSQL):** Base de datos relacional para persistir Workspaces, Proyectos, Sprints, Tareas y Usuarios. Se comunicará con Ktor mediante el ORM Exposed o Ktorm.
     
-- **Shared / Core (KMP):** Módulo común de KMP que contendrá los modelos de datos, la lógica de red (Ktor Client) y la gestión de estado general.
+- **Shared / Core (KMP):** Módulo KMP con dos targets: `jvm` (usado por el Backend y la app Desktop) y `js` (compila a bundle JS + genera ficheros `.d.ts` TypeScript para que `webApp/` mantenga tipado estricto sin duplicar modelos). Contiene modelos `@Serializable`, DTOs y Ktor Client.
     
 - **Frontend Escritorio (Compose Multiplatform):** UI nativa para JVM (Windows/Mac/Linux) implementando Material 3.
     
-- **Frontend Web (React + TS + Zustand):** Aplicación web que consumirá la API directamente (o utilizará wrappers de Kotlin/JS), gestionando su estado local con Zustand y usando librerías basadas en Material 3.
+- **Frontend Web (React + TS + Zustand):** Aplicación TypeScript pura (React 19 + Zustand + MUI). Consume la API Ktor directamente vía `fetch` nativo. Los modelos y DTOs se importan desde el módulo `shared` compilado a JS (paquete npm local `"shared": "0.0.0-unspecified"`), cuyas definiciones TypeScript son generadas automáticamente por el plugin KMP con `generateTypeScriptDefinitions()`. **No se escribe código Kotlin/JS en `webApp/`**; toda la lógica del frontend es TypeScript estándar.
     
+
+### Flujo de Tipos: shared → webApp
+
+El módulo `shared` actúa como la única fuente de verdad para los tipos de datos en toda la plataforma:
+
+```
+shared/commonMain  (@Serializable data class Task, Workspace, Project…)
+        ↓
+./gradlew :shared:jsBrowserLibraryDistribution
+        ↓
+shared/build/dist/js/productionLibrary/
+  ├── shared.js          → bundle consumido en runtime por webApp/
+  └── shared.d.ts        → definiciones TypeScript para type-checking en compilación
+        ↓
+webApp/package.json: "shared": "0.0.0-unspecified"  (enlace npm local)
+        ↓
+webApp/src/  →  import { Task } from 'shared'  (tipado estricto, sin duplicación)
+```
+
+**Regla operativa**: cada vez que se modifique un modelo en `shared/commonMain`, se debe ejecutar `./gradlew :shared:jsBrowserLibraryDistribution` antes de compilar `webApp/`. En CI, este paso precede al build de la web.
 
 ## 2. Esquema de Base de Datos (PostgreSQL) y Relaciones
 
@@ -122,19 +142,23 @@ zentrackapp/
 │   │   ├── db/               # Tablas Exposed/Ktorm y Migraciones
 │   │   ├── integrations/     # Clientes HTTP para GitLab/GitHub API
 │   │   └── Application.kt    # Punto de entrada
-├── shared/                   # KMP Module (Lógica compartida)
-│   ├── commonMain/           # Models, DTOs, Ktor Client, Repositories
-│   ├── desktopMain/          # Expect/Actual JVM
-│   └── jsMain/               # Expect/Actual JS
+├── shared/                   # KMP Module — targets: jvm + js
+│   ├── commonMain/           # Models (@Serializable), DTOs, Ktor Client, Repositories
+│   ├── jvmMain/              # Expect/Actual JVM (UUID, platform APIs)
+│   └── jsMain/               # Expect/Actual JS → compila a bundle + genera .d.ts
 ├── composeApp/               # Compose Multiplatform (Escritorio)
 │   └── src/desktopMain/
 │       ├── components/       # Material 3 UI Components
 │       └── screens/          # Workspaces, Board, Backlog
-└── webApp/                   # React + TS + Zustand
+└── webApp/                   # React 19 + TypeScript + Zustand + MUI
     ├── src/
-    │   ├── components/       # Componentes MUI (Material 3)
-    │   ├── store/            # Estado global (Zustand)
-    │   └── services/         # Llamadas a la API
+    │   ├── components/       # Componentes MUI reutilizables (presentacionales)
+    │   ├── screens/          # Pantallas (Workspaces, Board, Backlog, TaskDetail)
+    │   ├── store/            # Estado global Zustand (un archivo por dominio)
+    │   ├── services/         # Llamadas a la API Ktor vía fetch nativo
+    │   └── types/            # Re-exports e interfaces extendidas desde 'shared'
+    ├── package.json          # Dependencias JS (React, MUI, Zustand, Vite)
+    └── tsconfig.json         # TypeScript strict mode
 ```
 
 ## 5. Integración con Git y Manejo de Concurrencia

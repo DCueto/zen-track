@@ -1,0 +1,1 @@
+../../.agents/skills/kmp-core-feature/SKILL.md

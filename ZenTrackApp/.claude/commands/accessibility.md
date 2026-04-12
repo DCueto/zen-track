@@ -1,0 +1,1 @@
+../../.agents/skills/accessibility/SKILL.md

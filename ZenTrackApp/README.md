@@ -24,11 +24,11 @@ Este proyecto es un monorepo que utiliza el ecosistema de Kotlin para compartir 
     
 - **Base de Datos:** PostgreSQL + ORM (Exposed/Ktorm).
     
-- **Core Compartido:** Kotlin Multiplatform (KMP) para modelos de datos y cliente HTTP (Ktor Client).
+- **Core Compartido:** Kotlin Multiplatform (KMP) para modelos de datos, DTOs y cliente HTTP (Ktor Client). Targets: `jvm` (Desktop + Backend) y `js` (genera bundle JS + definiciones TypeScript para `webApp/`).
     
 - **Frontend Escritorio:** Compose Multiplatform (JVM) + Material 3.
     
-- **Frontend Web:** React + TypeScript + Zustand + MUI (Material 3).
+- **Frontend Web:** React 19 + TypeScript 5.8 + Zustand + MUI (Material 3). Consume el módulo `shared` compilado a JS con TypeScript definitions generadas automáticamente (`generateTypeScriptDefinitions()`).
     
 
 ## 📂 Estructura del Monorepo
@@ -83,17 +83,27 @@ Bash
 ./gradlew :composeApp:run
 ```
 
-### 4. Levantar la Web App (React)
+### 4. Levantar la Web App (React + TypeScript)
 
-Navega a la carpeta web, instala las dependencias y arranca el servidor de desarrollo:
+Primero compila el módulo `shared` para generar el bundle JS y las definiciones TypeScript que la web necesita:
+
+Bash
+
+```
+./gradlew :shared:jsBrowserLibraryDistribution
+```
+
+Luego instala las dependencias y arranca el servidor de desarrollo:
 
 Bash
 
 ```
 cd webApp
 npm install
-npm run dev
+npm run start
 ```
+
+> El módulo `shared` se enlaza como paquete npm local (`"shared": "0.0.0-unspecified"`). Ejecuta el paso Gradle anterior cada vez que modifiques modelos o DTOs en `shared/commonMain`.
 
 ## 📜 Reglas de Trabajo y GitFlow (¡Importante!)
 

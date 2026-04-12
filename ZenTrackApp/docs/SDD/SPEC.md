@@ -2,6 +2,8 @@
 
 **Descripción General**: ZenTrack es una plataforma minimalista de gestión de proyectos estructurada en **Workspaces**. Cada Workspace aísla los datos de un cliente (proyectos, sprints transversales y flujos de estados configurables). La herramienta automatiza el flujo de trabajo mediante una integración profunda con GitLab/GitHub, generando ramas basadas en GitFlow con IDs de proyecto legibles (ej. ZTK-1), y sienta las bases para una futura asistencia integral por Inteligencia Artificial.
 
+**Arquitectura de Frontend Web**: La aplicación web es TypeScript puro (React 19 + Zustand + MUI). Los modelos y DTOs compartidos se consumen desde el módulo KMP `shared`, compilado a JS con definiciones TypeScript generadas automáticamente (`generateTypeScriptDefinitions()`). **No se usa Kotlin/JS directamente en `webApp/`**; la web es una aplicación TypeScript estándar que importa tipos desde el paquete npm local `shared`.
+
 ## Historias de Usuario: MVP (Fase 1)
 
 ### Historia 1: Navegación de Workspaces y Configuración de Proyectos

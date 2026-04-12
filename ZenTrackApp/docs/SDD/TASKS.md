@@ -2,17 +2,42 @@
 
 ## Fase 1: Setup / Fundacional
 
-- [ ] **[Setup]** Inicializar el monorepo `zentrackapp` con la estructura de carpetas (backend, shared, composeApp, webApp).
-    
-- [ ] **[Setup Backend]** Configurar el proyecto Ktor con la conexión a PostgreSQL y el ORM (Exposed/Ktorm).
-    
-- [ ] **[Setup Backend]** Implementar el sistema base de Autenticación (generación y validación de JWT).
-    
-- [ ] **[Setup Shared]** Configurar el módulo KMP (`shared`) con Ktor Client para las peticiones HTTP.
-    
-- [ ] **[Setup Frontend]** Inicializar la app de Compose Multiplatform (Escritorio) con el tema base de Material 3.
-    
-- [ ] **[Setup Frontend]** Inicializar el proyecto web (React + TS + Zustand) configurando llamadas al módulo KMP o API.
+### Limpieza de boilerplate de plantilla (prerrequisito de la Fase 1)
+
+- [ ] **[Cleanup Shared]** Eliminar `shared/Greeting.kt` y `shared/Constants.kt` (boilerplate del template KMP, sin valor para ZenTrack). El `SERVER_PORT` de `Constants.kt` se moverá a `server/application.conf`.
+- [ ] **[Cleanup Shared]** Reemplazar el contenido de `Platform.kt` / `Platform.jvm.kt` / `Platform.js.kt` — el patrón `expect/actual` es válido, pero la implementación actual solo devuelve un nombre de plataforma. Redefinir la interfaz con utilidades reales de ZenTrack (ej. generación de UUIDs nativos).
+- [ ] **[Cleanup Shared]** Eliminar `SharedCommonTest.kt` (test de demostración vacío).
+- [ ] **[Cleanup Backend]** Reemplazar la ruta `GET /` de demostración en `Application.kt` por la estructura de plugins y routing definitiva. Eliminar `ApplicationTest.kt` de demostración.
+- [ ] **[Cleanup Desktop]** Reemplazar `composeApp/App.kt` de demo por el Composable raíz de ZenTrack. Eliminar `compose-multiplatform.xml` y `ComposeAppDesktopTest.kt`.
+- [ ] **[Cleanup Web]** Eliminar `webApp/src/components/Greeting/` y `webApp/src/components/JSLogo/` (demos). Actualizar `index.tsx` para montar la app ZenTrack.
+
+---
+
+### Backend (server/)
+
+- [x] **[Hecho]** Servidor Ktor con Netty en puerto 8080 operativo (`Application.kt` + `build.gradle.kts` configurados).
+- [ ] **[Config Backend]** Añadir dependencias Ktor en `server/build.gradle.kts`: `ktor-server-content-negotiation`, `ktor-serialization-kotlinx-json`, `ktor-server-auth-jwt`, `ktor-server-status-pages`, `ktor-server-cors`, `ktor-server-call-logging`. Añadir `kotlinx-serialization-json` y el driver PostgreSQL.
+- [ ] **[Config Backend]** Instalar plugins en `Application.module()`: `ContentNegotiation` (kotlinx.serialization JSON), `StatusPages` (manejo global de errores), `CORS` y `CallLogging`. Crear la estructura de carpetas `api/`, `core/`, `db/`, `integrations/`.
+- [ ] **[Config Backend]** Configurar la conexión a PostgreSQL con Exposed/Ktorm + HikariCP (pool de conexiones). Externalizar credenciales a `application.conf` (excluido de git vía `.gitignore`).
+- [ ] **[Config Backend]** Implementar el sistema base de Autenticación JWT: plugin `Authentication`, generación de tokens en login, validación en rutas protegidas, separación entre rutas públicas y autenticadas.
+
+### Shared (KMP)
+
+- [x] **[Hecho]** Módulo KMP con targets `jvm` + `js`, patrón `expect/actual` para `Platform` y `@JsExport` operativos (`shared/build.gradle.kts`).
+- [x] **[Hecho]** Target `js()` con `generateTypeScriptDefinitions()` configurado. Enlace npm local `"shared": "0.0.0-unspecified"` verificado y funcionando (webApp ya importa desde `'shared'`).
+- [ ] **[Config Shared]** Añadir Ktor Client a `commonMain.dependencies`: `ktor-client-core` + engine `ktor-client-cio` en `jvmMain` + engine `ktor-client-js` en `jsMain`. Añadir `ktor-client-content-negotiation` y `kotlinx-serialization-json`.
+- [ ] **[Config Shared]** Crear la estructura de carpetas en `commonMain`: `model/`, `dto/`, `network/`, `repository/`, `di/`. Configurar el cliente HTTP base (baseUrl desde `expect/actual`, headers comunes, manejo de errores).
+
+### composeApp/ (Desktop)
+
+- [x] **[Hecho]** App Compose Multiplatform JVM operativa con `MaterialTheme` y componentes M3 base (`App.kt` + `main.kt`).
+- [ ] **[Config Desktop]** Extender `App.kt`: definir `ZenTrackTheme` con `colorScheme`, `typography` y `shapes` propios de M3. Establecer el sistema de navegación raíz entre pantallas (Workspaces → Board).
+
+### webApp/ (React + TypeScript)
+
+- [x] **[Hecho]** Proyecto React 19 + TypeScript 5.8 + Vite 7 operativo. Integración con módulo `shared` funcionando (`Greeting.tsx` importa `Greeting` de `'shared'`).
+- [ ] **[Config Web]** Instalar dependencias de producción: `@mui/material`, `@emotion/react`, `@emotion/styled`, `zustand`. Configurar el `ThemeProvider` MUI con el tema base de ZenTrack en `index.tsx`.
+- [ ] **[Config Web]** Crear la estructura de carpetas definitiva: `screens/`, `store/`, `services/`, `types/`. Configurar `VITE_API_BASE_URL` en `.env.local` (excluido de git).
     
 
 ## Fase 2: Historia 1 - Navegación de Workspaces y Configuración de Proyectos
@@ -23,7 +48,7 @@
     
 - [ ] **[Backend]** Implementar endpoints para Proyectos, incluyendo la validación de que el `project_key` sea único por Workspace.
     
-- [ ] **[Shared]** Crear los DTOs y la lógica de red (Ktor Client) para interactuar con Workspaces y Proyectos.
+- [ ] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Ejecutar `jsBrowserLibraryDistribution` para regenerar los `.d.ts`.
     
 - [ ] **[Frontend]** Crear la UI del Login/Registro.
     
@@ -42,7 +67,7 @@
     
 - [ ] **[Backend]** Crear el endpoint `POST /tasks` que guarde la tarea, calcule su ID (ej. `ZTK-25`) y dispare la llamada a Git.
     
-- [ ] **[Shared]** Definir los modelos de Tarea y los repositorios en el módulo común.
+- [ ] **[Shared]** Definir los modelos `@Serializable` de Tarea (`Task`, `TaskStatus`, `Tag`) y los repositorios en `commonMain`. Regenerar `.d.ts` con `jsBrowserLibraryDistribution`.
     
 - [ ] **[Frontend]** Construir el modal/formulario de "Nueva Tarea" (campos: título, descripción, prioridad, estimación, checklist).
     
@@ -66,7 +91,8 @@
 
 - [ ] **[Backend]** Optimizar el endpoint `GET /tasks` para aceptar parámetros de filtrado (por sprint, por proyecto, por asignado, por estado).
     
-- [ ] **[Shared]** Implementar la gestión del estado global (ej. Sprints activos, filtros seleccionados).
+- [ ] **[Shared]** Definir los modelos `@Serializable` de `Sprint` y los filtros activos en `commonMain` y regenerar `.d.ts`.
+- [ ] **[Frontend Web]** Implementar los stores Zustand (`useSprintStore`, `useFilterStore`) usando los tipos importados desde el paquete `shared`.
     
 - [ ] **[Frontend]** Desarrollar el componente "Tablero Kanban" usando Material 3 (columnas basadas en `Task_Statuses` y drag-and-drop básico).
     
