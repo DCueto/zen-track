@@ -116,7 +116,8 @@ cd webApp && npm run test:run             # webApp (Vitest, una pasada)
 ./gradlew test                            # todos los módulos Kotlin
 ```
 
-Consulta el `CLAUDE.md` de cada módulo para las convenciones detalladas de testing.
+Consulta el `CLAUDE.md` de cada módulo para las convenciones detalladas de testing:
+`server/CLAUDE.md`, `shared/CLAUDE.md`, `androidApp/CLAUDE.md`, `cli/CLAUDE.md`, `webApp/CLAUDE.md`.
 
 ## Restricciones Globales
 
