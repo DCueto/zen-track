@@ -1,24 +1,24 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-
+    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
     jvm()
-
-    js {
-        outputModuleName = "shared"
-        browser()
-        binaries.library()
-        generateTypeScriptDefinitions()
-        compilerOptions {
-            target = "es2015"
+    androidTarget {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -26,3 +26,14 @@ kotlin {
     }
 }
 
+android {
+    namespace = "me.dcueto.zentrackapp.shared"
+    compileSdk = libs.versions.androidCompileSdk.get().toInt()
+    defaultConfig {
+        minSdk = libs.versions.androidMinSdk.get().toInt()
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
