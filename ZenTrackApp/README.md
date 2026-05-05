@@ -13,7 +13,7 @@ ZenTrack es una plataforma minimalista de gestión de proyectos diseñada para e
     
 - **Sprints Transversales:** Agrupa tareas de diferentes proyectos de un mismo Workspace en un único ciclo de desarrollo.
     
-- **Multiplataforma:** Experiencia nativa en Escritorio y Web bajo los principios de diseño de Material 3.
+- **Multiplataforma:** App Android nativa (Jetpack Compose M3), web (React/TS) y CLI (Kotlin).
     
 
 ## 🛠️ Stack Tecnológico
@@ -24,11 +24,13 @@ Este proyecto es un monorepo que utiliza el ecosistema de Kotlin para compartir 
     
 - **Base de Datos:** PostgreSQL + ORM (Exposed/Ktorm).
     
-- **Core Compartido:** Kotlin Multiplatform (KMP) para modelos de datos, DTOs y cliente HTTP (Ktor Client). Targets: `jvm` (Desktop + Backend) y `js` (genera bundle JS + definiciones TypeScript para `webApp/`).
+- **Core Compartido:** Kotlin Multiplatform (KMP) para modelos de datos, DTOs y Ktor Client. Targets: `jvm` (server + CLI) y `androidTarget` (app Android). Sin compilación JS.
     
-- **Frontend Escritorio:** Compose Multiplatform (JVM) + Material 3.
+- **App Android:** Jetpack Compose + Material 3 + ViewModel + StateFlow. Depende de `:shared`.
+
+- **CLI:** Kotlin/JVM + Clikt. Depende de `:shared`. Comandos de terminal para gestionar tareas.
     
-- **Frontend Web:** React 19 + TypeScript 5.8 + Zustand + MUI (Material 3). Consume el módulo `shared` compilado a JS con TypeScript definitions generadas automáticamente (`generateTypeScriptDefinitions()`).
+- **Frontend Web:** React 19 + TypeScript 5.8 + Zustand + MUI (Material 3). Tipos TypeScript generados desde la spec OpenAPI del servidor con `openapi-typescript`.
     
 
 ## 📂 Estructura del Monorepo
@@ -37,10 +39,11 @@ Plaintext
 
 ```
 zentrackapp/
-├── backend/                  # API Server (Ktor). Lógica de negocio e integraciones Git.
-├── shared/                   # KMP Module. Modelos compartidos y lógica de red.
-├── composeApp/               # App nativa de escritorio (Windows/Mac/Linux).
-└── webApp/                   # Aplicación Web (React).
+├── server/                   # API Server (Ktor). Lógica de negocio e integraciones Git.
+├── shared/                   # KMP Module. Modelos compartidos y lógica de red (JVM + Android).
+├── androidApp/               # App Android nativa (Jetpack Compose M3).
+├── cli/                      # CLI Kotlin (Clikt). Herramienta de terminal.
+└── webApp/                   # Aplicación Web (React 19 + TypeScript).
 ```
 
 ## 🏁 Primeros Pasos (Setup Local)
@@ -49,11 +52,13 @@ zentrackapp/
 
 - JDK 17 o superior.
     
+- Android Studio (para el módulo `androidApp/`).
+    
 - Node.js (v18+) y npm/yarn (para la web).
     
 - PostgreSQL ejecutándose en local (puerto 5432).
     
-- IntelliJ IDEA (Recomendado para Kotlin/KMP) y VSCode/Cursor (para React).
+- IntelliJ IDEA (recomendado para Kotlin/KMP) y VSCode/Cursor (para React).
     
 
 ### 1. Base de Datos
@@ -73,27 +78,30 @@ cd backend
 
 _El servidor estará disponible en `http://localhost:8080`._
 
-### 3. Levantar la App de Escritorio (Compose)
+### 3. Levantar la App Android
 
-Para ejecutar la aplicación nativa desde tu máquina:
+Abre el proyecto en Android Studio y ejecuta el módulo `androidApp` en un emulador o dispositivo.
 
-Bash
-
-```
-./gradlew :composeApp:run
-```
-
-### 4. Levantar la Web App (React + TypeScript)
-
-Primero compila el módulo `shared` para generar el bundle JS y las definiciones TypeScript que la web necesita:
+O desde terminal:
 
 Bash
 
 ```
-./gradlew :shared:jsBrowserLibraryDistribution
+./gradlew :androidApp:assembleDebug
 ```
 
-Luego instala las dependencias y arranca el servidor de desarrollo:
+### 4. Usar el CLI
+
+Bash
+
+```
+./gradlew :cli:installDist
+./cli/build/install/cli/bin/cli --help
+```
+
+### 5. Levantar la Web App (React + TypeScript)
+
+Instala las dependencias y arranca el servidor de desarrollo:
 
 Bash
 
@@ -103,7 +111,10 @@ npm install
 npm run start
 ```
 
-> El módulo `shared` se enlaza como paquete npm local (`"shared": "0.0.0-unspecified"`). Ejecuta el paso Gradle anterior cada vez que modifiques modelos o DTOs en `shared/commonMain`.
+> Los tipos TypeScript se generan desde la spec OpenAPI del servidor. Con el servidor corriendo en `localhost:8080`, regenera los tipos con:
+> ```
+> cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+> ```
 
 ## 📜 Reglas de Trabajo y GitFlow (¡Importante!)
 

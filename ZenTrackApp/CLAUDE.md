@@ -1,7 +1,7 @@
 # CLAUDE.md — ZenTrack (Raíz del Monorepo)
 
 ## QUÉ es este proyecto
-Monorepo Kotlin con cuatro módulos (`server`, `shared`, `composeApp`, `webApp`) que implementan ZenTrack: plataforma ágil multi-tenant con integración GitFlow automatizada. Consulta `AGENTS.md` para el stack completo y los comandos Gradle.
+Monorepo Kotlin con cinco módulos (`server`, `shared`, `androidApp`, `cli`, `webApp`) que implementan ZenTrack: plataforma ágil multi-tenant con integración GitFlow automatizada. Consulta `AGENTS.md` para el stack completo y los comandos Gradle.
 
 ## POR QUÉ estas reglas existen
 Mantener coherencia arquitectónica entre módulos escritos en distintos lenguajes y plataformas, garantizando que cada capa respeta sus límites y que el código es verificable en CI sin intervención manual.
@@ -39,17 +39,19 @@ Mantener coherencia arquitectónica entre módulos escritos en distintos lenguaj
 | Módulo | Responsabilidad | CLAUDE.md específico |
 |---|---|---|
 | `server/` | API Ktor, lógica de negocio, BD | `server/CLAUDE.md` |
-| `shared/` | Modelos, DTOs, Ktor Client (JVM+JS) | `shared/CLAUDE.md` |
-| `composeApp/` | UI Desktop Compose M3 | `shared/CLAUDE.md` |
+| `shared/` | Modelos, DTOs, Ktor Client (JVM + Android) | `shared/CLAUDE.md` |
+| `androidApp/` | UI Android Jetpack Compose M3 + ViewModel | `androidApp/CLAUDE.md` |
+| `cli/` | CLI Kotlin (Clikt), depende de shared | `cli/CLAUDE.md` |
 | `webApp/` | UI Web React + TS + Zustand + MUI | `webApp/CLAUDE.md` |
 
 ### Comandos de Verificación Rápida
 
 ```bash
-./gradlew test                        # Valida todos los módulos antes de proponer cambios
-./gradlew :server:buildFatJar         # Verifica compilación del backend
-./gradlew :shared:jsBrowserLibraryDistribution  # Verifica output JS + TS definitions
-./gradlew :composeApp:run             # Verifica compilación y arranque desktop
+./gradlew test                           # Valida todos los módulos antes de proponer cambios
+./gradlew :server:buildFatJar            # Verifica compilación del backend
+./gradlew :shared:jvmJar                 # Verifica compilación del módulo shared
+./gradlew :androidApp:assembleDebug      # Verifica compilación Android
+./gradlew :cli:installDist               # Verifica compilación y empaquetado del CLI
 ```
 
 ### Convenciones de Dominio

@@ -8,7 +8,7 @@
 - [ ] **[Cleanup Shared]** Reemplazar el contenido de `Platform.kt` / `Platform.jvm.kt` / `Platform.js.kt` — el patrón `expect/actual` es válido, pero la implementación actual solo devuelve un nombre de plataforma. Redefinir la interfaz con utilidades reales de ZenTrack (ej. generación de UUIDs nativos).
 - [ ] **[Cleanup Shared]** Eliminar `SharedCommonTest.kt` (test de demostración vacío).
 - [ ] **[Cleanup Backend]** Reemplazar la ruta `GET /` de demostración en `Application.kt` por la estructura de plugins y routing definitiva. Eliminar `ApplicationTest.kt` de demostración.
-- [ ] **[Cleanup Desktop]** Reemplazar `composeApp/App.kt` de demo por el Composable raíz de ZenTrack. Eliminar `compose-multiplatform.xml` y `ComposeAppDesktopTest.kt`.
+- [ ] **[Cleanup Android]** Eliminar el módulo `composeApp/` del monorepo Gradle. Crear el módulo `androidApp/` con la estructura definida en `androidApp/CLAUDE.md`.
 - [ ] **[Cleanup Web]** Eliminar `webApp/src/components/Greeting/` y `webApp/src/components/JSLogo/` (demos). Actualizar `index.tsx` para montar la app ZenTrack.
 
 ---
@@ -23,21 +23,28 @@
 
 ### Shared (KMP)
 
-- [x] **[Hecho]** Módulo KMP con targets `jvm` + `js`, patrón `expect/actual` para `Platform` y `@JsExport` operativos (`shared/build.gradle.kts`).
-- [x] **[Hecho]** Target `js()` con `generateTypeScriptDefinitions()` configurado. Enlace npm local `"shared": "0.0.0-unspecified"` verificado y funcionando (webApp ya importa desde `'shared'`).
-- [ ] **[Config Shared]** Añadir Ktor Client a `commonMain.dependencies`: `ktor-client-core` + engine `ktor-client-cio` en `jvmMain` + engine `ktor-client-js` en `jsMain`. Añadir `ktor-client-content-negotiation` y `kotlinx-serialization-json`.
+- [ ] **[Config Shared]** Reconfigurar `shared/build.gradle.kts`: eliminar target `js()`, añadir `androidTarget()`. Eliminar `jsMain/` source set y `generateTypeScriptDefinitions()`.
+- [ ] **[Config Shared]** Añadir Ktor Client a `commonMain.dependencies`: `ktor-client-core` + engine `ktor-client-cio` en `jvmMain` + engine `ktor-client-okhttp` en `androidMain`. Añadir `ktor-client-content-negotiation` y `kotlinx-serialization-json`.
 - [ ] **[Config Shared]** Crear la estructura de carpetas en `commonMain`: `model/`, `dto/`, `network/`, `repository/`, `di/`. Configurar el cliente HTTP base (baseUrl desde `expect/actual`, headers comunes, manejo de errores).
+- [ ] **[Cleanup Shared]** Eliminar `Platform.js.kt` y cualquier archivo en `jsMain/`. Adaptar `Platform.kt` / `Platform.jvm.kt` con el nuevo `androidMain/Platform.android.kt`.
 
-### composeApp/ (Desktop)
+### androidApp/ (Jetpack Compose Android)
 
-- [x] **[Hecho]** App Compose Multiplatform JVM operativa con `MaterialTheme` y componentes M3 base (`App.kt` + `main.kt`).
-- [ ] **[Config Desktop]** Extender `App.kt`: definir `ZenTrackTheme` con `colorScheme`, `typography` y `shapes` propios de M3. Establecer el sistema de navegación raíz entre pantallas (Workspaces → Board).
+- [ ] **[Setup Android]** Crear el módulo `androidApp/` en el monorepo Gradle con `com.android.application` + `kotlin-android` + `compose`. Añadir dependencia `implementation(projects.shared)`.
+- [ ] **[Config Android]** Definir `ZenTrackTheme` con `colorScheme`, `typography` y `shapes` propios de M3. Configurar `MainActivity` como punto de entrada con Koin y navegación.
+- [ ] **[Config Android]** Establecer el sistema de navegación (Jetpack Navigation Compose) con el grafo de rutas: Workspaces → Board → TaskDetail.
+
+### cli/ (Kotlin/JVM + Clikt)
+
+- [ ] **[Setup CLI]** Crear el módulo `cli/` en el monorepo Gradle con `application` plugin. Añadir dependencia `implementation(projects.shared)` y `implementation(libs.clikt)`.
+- [ ] **[Config CLI]** Definir la estructura de comandos raíz con Clikt: `zentrack tasks`, `zentrack workspaces`, `zentrack sprints`.
 
 ### webApp/ (React + TypeScript)
 
-- [x] **[Hecho]** Proyecto React 19 + TypeScript 5.8 + Vite 7 operativo. Integración con módulo `shared` funcionando (`Greeting.tsx` importa `Greeting` de `'shared'`).
+- [x] **[Hecho]** Proyecto React 19 + TypeScript 5.8 + Vite 7 operativo.
+- [ ] **[Config Web]** Eliminar la dependencia `"shared": "0.0.0-unspecified"` de `package.json`. Instalar `openapi-typescript` como devDependency. Configurar script `npm run types:generate` en `package.json`.
 - [ ] **[Config Web]** Instalar dependencias de producción: `@mui/material`, `@emotion/react`, `@emotion/styled`, `zustand`. Configurar el `ThemeProvider` MUI con el tema base de ZenTrack en `index.tsx`.
-- [ ] **[Config Web]** Crear la estructura de carpetas definitiva: `screens/`, `store/`, `services/`, `types/`. Configurar `VITE_API_BASE_URL` en `.env.local` (excluido de git).
+- [ ] **[Config Web]** Crear la estructura de carpetas definitiva: `screens/`, `store/`, `services/`, `types/`. Configurar `VITE_API_BASE_URL` en `.env.local` (excluido de git). Generar `src/types/api.ts` inicial desde la spec OpenAPI.
     
 
 ## Fase 2: Historia 1 - Navegación de Workspaces y Configuración de Proyectos
@@ -48,7 +55,7 @@
     
 - [ ] **[Backend]** Implementar endpoints para Proyectos, incluyendo la validación de que el `project_key` sea único por Workspace.
     
-- [ ] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Ejecutar `jsBrowserLibraryDistribution` para regenerar los `.d.ts`.
+- [ ] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Tras cada cambio de modelo, verificar compilación con `./gradlew :shared:jvmJar :shared:testDebugUnitTest`.
     
 - [ ] **[Frontend]** Crear la UI del Login/Registro.
     
@@ -67,7 +74,7 @@
     
 - [ ] **[Backend]** Crear el endpoint `POST /tasks` que guarde la tarea, calcule su ID (ej. `ZTK-25`) y dispare la llamada a Git.
     
-- [ ] **[Shared]** Definir los modelos `@Serializable` de Tarea (`Task`, `TaskStatus`, `Tag`) y los repositorios en `commonMain`. Regenerar `.d.ts` con `jsBrowserLibraryDistribution`.
+- [ ] **[Shared]** Definir los modelos `@Serializable` de Tarea (`Task`, `TaskStatus`, `Tag`) y los repositorios en `commonMain`. Verificar compilación con `./gradlew :shared:jvmJar :shared:testDebugUnitTest`.
     
 - [ ] **[Frontend]** Construir el modal/formulario de "Nueva Tarea" (campos: título, descripción, prioridad, estimación, checklist).
     

@@ -9,32 +9,32 @@ ZenTrack utilizará una arquitectura cliente-servidor basada en el ecosistema Ko
     
 - **Base de Datos (PostgreSQL):** Base de datos relacional para persistir Workspaces, Proyectos, Sprints, Tareas y Usuarios. Se comunicará con Ktor mediante el ORM Exposed o Ktorm.
     
-- **Shared / Core (KMP):** Módulo KMP con dos targets: `jvm` (usado por el Backend y la app Desktop) y `js` (compila a bundle JS + genera ficheros `.d.ts` TypeScript para que `webApp/` mantenga tipado estricto sin duplicar modelos). Contiene modelos `@Serializable`, DTOs y Ktor Client.
+- **Shared / Core (KMP):** Módulo KMP con dos targets: `jvm` (usado por el Backend y el CLI) y `androidTarget` (usado por la app Android). Contiene modelos `@Serializable`, DTOs y Ktor Client. Sin compilación JS.
+
+- **App Android (Jetpack Compose):** UI nativa Android implementando Material 3. Arquitectura MVI con ViewModel + StateFlow. Depende de `:shared` vía `androidTarget`.
+
+- **CLI (Kotlin/JVM + Clikt):** Herramienta de terminal para gestionar tareas desde la línea de comandos. Depende de `:shared` vía `jvm` target.
     
-- **Frontend Escritorio (Compose Multiplatform):** UI nativa para JVM (Windows/Mac/Linux) implementando Material 3.
-    
-- **Frontend Web (React + TS + Zustand):** Aplicación TypeScript pura (React 19 + Zustand + MUI). Consume la API Ktor directamente vía `fetch` nativo. Los modelos y DTOs se importan desde el módulo `shared` compilado a JS (paquete npm local `"shared": "0.0.0-unspecified"`), cuyas definiciones TypeScript son generadas automáticamente por el plugin KMP con `generateTypeScriptDefinitions()`. **No se escribe código Kotlin/JS en `webApp/`**; toda la lógica del frontend es TypeScript estándar.
+- **Frontend Web (React + TS + Zustand):** Aplicación TypeScript pura (React 19 + Zustand + MUI). Consume la API Ktor directamente vía `fetch` nativo. Los tipos TypeScript se generan desde la spec OpenAPI del servidor con `openapi-typescript`. **No hay dependencia de módulos Kotlin en `webApp/`**; toda la lógica del frontend es TypeScript estándar.
     
 
-### Flujo de Tipos: shared → webApp
+### Flujo de Tipos: Ktor → OpenAPI → webApp
 
-El módulo `shared` actúa como la única fuente de verdad para los tipos de datos en toda la plataforma:
+La spec OpenAPI es la fuente de verdad para los tipos del frontend web:
 
 ```
 shared/commonMain  (@Serializable data class Task, Workspace, Project…)
         ↓
-./gradlew :shared:jsBrowserLibraryDistribution
+server/  (Ktor expone la spec vía plugin OpenAPI)
         ↓
-shared/build/dist/js/productionLibrary/
-  ├── shared.js          → bundle consumido en runtime por webApp/
-  └── shared.d.ts        → definiciones TypeScript para type-checking en compilación
+http://localhost:8080/openapi.json
         ↓
-webApp/package.json: "shared": "0.0.0-unspecified"  (enlace npm local)
+npx openapi-typescript openapi.json -o webApp/src/types/api.ts
         ↓
-webApp/src/  →  import { Task } from 'shared'  (tipado estricto, sin duplicación)
+webApp/src/  →  import type { Task } from './types/api'  (tipado estricto)
 ```
 
-**Regla operativa**: cada vez que se modifique un modelo en `shared/commonMain`, se debe ejecutar `./gradlew :shared:jsBrowserLibraryDistribution` antes de compilar `webApp/`. En CI, este paso precede al build de la web.
+**Regla operativa**: cuando se modifique un modelo en `shared/commonMain` o un endpoint en `server/`, regenerar los tipos del frontend ejecutando `openapi-typescript`. En CI, este paso precede al build de la web y requiere que el servidor esté corriendo o que la spec se exporte como fichero estático.
 
 ## 2. Esquema de Base de Datos (PostgreSQL) y Relaciones
 
@@ -135,28 +135,32 @@ Plaintext
 
 ```
 zentrackapp/
-├── backend/                  # Ktor Server API
+├── server/                   # Ktor Server API
 │   ├── src/main/kotlin/
 │   │   ├── api/              # Controladores (Routes)
 │   │   ├── core/             # Lógica de negocio (Services) y Auth JWT
 │   │   ├── db/               # Tablas Exposed/Ktorm y Migraciones
 │   │   ├── integrations/     # Clientes HTTP para GitLab/GitHub API
 │   │   └── Application.kt    # Punto de entrada
-├── shared/                   # KMP Module — targets: jvm + js
+├── shared/                   # KMP Module — targets: jvm + androidTarget
 │   ├── commonMain/           # Models (@Serializable), DTOs, Ktor Client, Repositories
-│   ├── jvmMain/              # Expect/Actual JVM (UUID, platform APIs)
-│   └── jsMain/               # Expect/Actual JS → compila a bundle + genera .d.ts
-├── composeApp/               # Compose Multiplatform (Escritorio)
-│   └── src/desktopMain/
-│       ├── components/       # Material 3 UI Components
-│       └── screens/          # Workspaces, Board, Backlog
+│   ├── jvmMain/              # Expect/Actual JVM (UUID, platform APIs) → server + cli
+│   └── androidMain/          # Expect/Actual Android (UUID, platform APIs) → androidApp
+├── androidApp/               # Jetpack Compose Android
+│   └── src/main/kotlin/
+│       ├── ui/screens/       # Workspaces, Board, Backlog, TaskDetail
+│       ├── ui/components/    # Material 3 UI Components reutilizables
+│       └── ui/theme/         # ZenTrackTheme, Color, Type
+├── cli/                      # Kotlin/JVM CLI (Clikt)
+│   └── src/main/kotlin/
+│       └── commands/         # Comandos Clikt (tasks, workspaces, sprints…)
 └── webApp/                   # React 19 + TypeScript + Zustand + MUI
     ├── src/
     │   ├── components/       # Componentes MUI reutilizables (presentacionales)
     │   ├── screens/          # Pantallas (Workspaces, Board, Backlog, TaskDetail)
     │   ├── store/            # Estado global Zustand (un archivo por dominio)
     │   ├── services/         # Llamadas a la API Ktor vía fetch nativo
-    │   └── types/            # Re-exports e interfaces extendidas desde 'shared'
+    │   └── types/            # api.ts generado por openapi-typescript
     ├── package.json          # Dependencias JS (React, MUI, Zustand, Vite)
     └── tsconfig.json         # TypeScript strict mode
 ```

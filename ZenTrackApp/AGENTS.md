@@ -11,9 +11,11 @@ ZenTrack es una plataforma minimalista de gestión de proyectos multi-tenant est
 | Lenguaje | Kotlin | 2.3.0 |
 | Backend | Ktor (Netty) | 3.3.3 |
 | Base de datos | PostgreSQL + Exposed/Ktorm | — |
-| Core compartido | Kotlin Multiplatform | 2.3.0 |
-| UI Desktop | Compose Multiplatform + Material 3 | 1.10.0 / 1.10.0-alpha05 |
+| Core compartido | Kotlin Multiplatform (targets: jvm + androidTarget) | 2.3.0 |
+| UI Android | Jetpack Compose + Material 3 | — |
+| CLI | Kotlin/JVM + Clikt | — |
 | UI Web | React + TypeScript + Zustand + MUI | 19.2.0 / 5.8.3 |
+| Tipos web | OpenAPI spec → openapi-typescript | — |
 | Coroutines | kotlinx-coroutines | 1.10.2 |
 | Lifecycle | androidx.lifecycle | 2.9.6 |
 | Build tool | Gradle (Kotlin DSL) | — |
@@ -24,9 +26,10 @@ ZenTrack es una plataforma minimalista de gestión de proyectos multi-tenant est
 ```
 zentrackapp/
 ├── server/       → Ktor API + lógica de negocio + integración Git
-├── shared/       → KMP: modelos, DTOs, Ktor Client (targets: JVM + JS)
-├── composeApp/   → Compose Multiplatform Desktop (JVM)
-└── webApp/       → React + TypeScript (consume shared via npm)
+├── shared/       → KMP: modelos, DTOs, Ktor Client (targets: JVM + Android)
+├── androidApp/   → Jetpack Compose Android + ViewModel + StateFlow
+├── cli/          → Kotlin/JVM CLI (Clikt). Depende de :shared
+└── webApp/       → React + TypeScript. Tipos vía OpenAPI generado desde Ktor
 ```
 
 ## Comandos Gradle de Referencia
@@ -36,8 +39,9 @@ zentrackapp/
 ./gradlew test                            # Todos los módulos
 ./gradlew :server:test                    # Backend únicamente
 ./gradlew :shared:jvmTest                 # Shared (target JVM)
-./gradlew :shared:jsTest                  # Shared (target JS)
-./gradlew :composeApp:test                # Desktop únicamente
+./gradlew :shared:testDebugUnitTest       # Shared (target Android)
+./gradlew :androidApp:testDebugUnitTest   # Android únicamente
+./gradlew :cli:test                       # CLI únicamente
 ```
 
 ### Compilación y Distribución
@@ -46,12 +50,14 @@ zentrackapp/
 ./gradlew :server:buildFatJar             # Fat JAR desplegable
 
 # Shared
-./gradlew :shared:jvmJar                  # Artefacto JVM
-./gradlew :shared:jsBrowserLibraryDistribution  # Bundle JS + TypeScript definitions
+./gradlew :shared:jvmJar                  # Artefacto JVM (usado por server y cli)
 
-# Desktop
-./gradlew :composeApp:packageDistributionForCurrentOS  # DMG/MSI/DEB nativo
-./gradlew :composeApp:packageReleaseDistributionForCurrentOS
+# Android
+./gradlew :androidApp:assembleDebug       # APK debug
+./gradlew :androidApp:assembleRelease     # APK release
+
+# CLI
+./gradlew :cli:installDist                # Instala scripts ejecutables en build/install/
 
 # Web (Node)
 cd webApp && npm run build                # Producción (vite build)
@@ -60,11 +66,18 @@ cd webApp && npm run build                # Producción (vite build)
 ### Ejecución en Desarrollo
 ```bash
 ./gradlew :server:run -t                  # Backend con hot-reload
-./gradlew :composeApp:run                 # Desktop
 
-# Primero construir shared JS, luego web:
-./gradlew :shared:jsBrowserLibraryDistribution
+# CLI (tras installDist):
+./cli/build/install/cli/bin/cli --help
+
+# Web:
 cd webApp && npm run start                # Vite dev server
+```
+
+### Generación de Tipos para webApp
+```bash
+# Tras levantar el servidor, regenerar tipos TypeScript desde la spec OpenAPI:
+cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
 ```
 
 ## Restricciones Globales
@@ -87,9 +100,10 @@ cd webApp && npm run start                # Vite dev server
 ## Archivos de Contexto por Módulo
 
 - `server/CLAUDE.md` — Reglas de Ktor, PostgreSQL, Clean Architecture, RLS.
-- `shared/CLAUDE.md` — Reglas KMP, expect/actual, Koin, módulos comunes.
-- `composeApp/CLAUDE.md` → ver `shared/CLAUDE.md` (mismas reglas MVI + Compose M3).
-- `webApp/CLAUDE.md` — Reglas React, TypeScript, Zustand, MUI.
+- `shared/CLAUDE.md` — Reglas KMP, expect/actual, Koin, targets JVM + Android.
+- `androidApp/CLAUDE.md` — Reglas Jetpack Compose, ViewModel MVI, navegación Android.
+- `cli/CLAUDE.md` — Reglas Clikt, estructura de comandos, integración con shared.
+- `webApp/CLAUDE.md` — Reglas React, TypeScript, Zustand, MUI, tipos OpenAPI.
 - `docs/SDD/SPEC.md` — Historias de usuario y criterios de aceptación MVP.
 - `docs/SDD/PLAN.md` — Arquitectura técnica, esquema BD y endpoints.
 - `docs/SDD/TASKS.md` — Backlog de tareas por fase.

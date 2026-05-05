@@ -1,10 +1,10 @@
 # CLAUDE.md — webApp/ (React 19 + TypeScript + Zustand + MUI)
 
 ## QUÉ hace este módulo
-Aplicación web construida con React 19, TypeScript 5.8, Vite 7 y Material UI (MUI). Consume la API REST del servidor Ktor y utiliza el módulo `shared` compilado a JS (disponible como paquete npm `"shared": "0.0.0-unspecified"`) para reutilizar modelos y DTOs.
+Aplicación web construida con React 19, TypeScript 5.8, Vite 7 y Material UI (MUI). Consume la API REST del servidor Ktor. Los tipos TypeScript se generan desde la spec OpenAPI del servidor con `openapi-typescript` y se guardan en `src/types/api.ts`. No existe dependencia de módulos Kotlin.
 
 ## POR QUÉ estas reglas existen
-React Context API con actualizaciones frecuentes provoca cascadas de re-render. Zustand con el patrón de selectores elimina ese problema. Los tipos estrictos entre el módulo Kotlin/JS compartido y los componentes React previenen errores en tiempo de integración que TypeScript no detectaría sin `interface` explícitas.
+React Context API con actualizaciones frecuentes provoca cascadas de re-render. Zustand con el patrón de selectores elimina ese problema. Generar los tipos desde OpenAPI garantiza que el contrato entre frontend y backend está siempre sincronizado sin duplicación manual.
 
 ## CÓMO estructurar el código
 
@@ -20,22 +20,34 @@ src/
 └── main.tsx        → Entry point
 ```
 
-### Interoperabilidad con el módulo shared (Kotlin/JS)
+### Tipos desde OpenAPI
 
-- **SIEMPRE** importa modelos y DTOs desde el paquete `shared` en lugar de redefinirlos en TypeScript.
-- **PROHIBIDO** duplicar tipos que ya existen en `shared/` como clases `@Serializable`. Si el tipo no está en shared, agrégalo allí y regenera las definiciones.
-- Al consumir APIs del módulo shared que usen tipos Kotlin específicos (ej. `kotlin.collections.List`), **SIEMPRE** declara un wrapper o adaptador en `src/types/` para evitar que la interoperabilidad Kotlin/JS se propague a los componentes React.
+- **SIEMPRE** importa los tipos de dominio desde `src/types/api.ts` (generado por `openapi-typescript`). **PROHIBIDO** redefinir manualmente tipos que ya describe la spec OpenAPI.
+- Si necesitas extender un tipo generado, hazlo en `src/types/` con una interfaz que extienda el tipo base:
 
 ```typescript
-// CORRECTO — adaptar en la capa de types
-import { Task as SharedTask } from 'shared';
-export interface Task extends SharedTask {
-  // extensiones específicas del frontend si aplican
+// CORRECTO — extender el tipo generado
+import type { components } from './api';
+type Task = components['schemas']['Task'];
+export interface TaskWithUI extends Task {
+  isSelected: boolean;  // estado local de UI, no pertenece a la API
 }
 
-// PROHIBIDO — redefinir lo que ya existe en shared
+// PROHIBIDO — redefinir lo que ya describe la spec
 export interface Task { id: string; title: string; /* ... */ }
 ```
+
+- Cuando se modifique un endpoint o modelo en el servidor, regenera los tipos:
+
+```bash
+# Con el servidor corriendo en localhost:8080:
+npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+
+# O desde un fichero estático exportado:
+npx openapi-typescript ../server/openapi.json -o src/types/api.ts
+```
+
+**NUNCA** edites manualmente `src/types/api.ts`; es un artefacto generado.
 
 ### Estado Global con Zustand
 
@@ -56,16 +68,12 @@ const store = useTaskStore();
 
 ### Gestión de Dependencias JS
 
-- Las dependencias de producción del módulo `shared` (bindings Kotlin) se declaran con `npm()` dentro de `shared/build.gradle.kts`.
-- Las dependencias propias de `webApp/` (React, MUI, Zustand, etc.) se declaran en `webApp/package.json`.
-- **PROHIBIDO** añadir en `package.json` una dependencia que es transitiva del módulo `shared`; esto crea conflictos de versión.
+- Todas las dependencias de `webApp/` se declaran en `webApp/package.json`. No hay dependencias Kotlin/KMP.
+- El módulo `shared` Kotlin **no** se incluye como paquete npm; la integración se hace vía OpenAPI.
 
 ```bash
 # Añadir dependencia nueva a webApp:
 cd webApp && npm install @mui/material @emotion/react @emotion/styled
-
-# Añadir binding JS al módulo shared (en shared/build.gradle.kts):
-# jsMain.dependencies { implementation(npm("some-js-lib", "1.2.3")) }
 ```
 
 ### Componentes MUI y Tipado Estricto
@@ -120,10 +128,12 @@ npm run build   # tsc + vite build → dist/
 ### Comandos de Verificación
 
 ```bash
-# Antes de cualquier cambio que afecte tipos compartidos:
-cd .. && ./gradlew :shared:jsBrowserLibraryDistribution
-cd webApp && npm run build   # Verifica que los tipos generados son compatibles
+# Regenerar tipos desde OpenAPI (requiere servidor corriendo):
+npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
 
 # Type-check sin build:
 npx tsc --noEmit
+
+# Build de producción:
+npm run build
 ```

@@ -5,11 +5,11 @@ description: >
   peticiones HTTP con Ktor Client en el módulo `shared/` de ZenTrack (Kotlin
   Multiplatform). Carga esta habilidad siempre que la tarea implique: crear o
   cambiar una entidad de dominio en `commonMain`, añadir o actualizar un DTO
-  `@Serializable`, definir o modificar una función de Ktor Client, exportar
-  tipos al bundle JS/TypeScript, o introducir un patrón `expect/actual` nuevo.
+  `@Serializable`, definir o modificar una función de Ktor Client, o introducir
+  un patrón `expect/actual` nuevo.
   También aplica cuando el usuario mencione "modelo compartido", "DTO",
-  "repositorio de red", "Ktor Client", "TypeScript definitions", "shared KMP",
-  "jsBrowserLibraryDistribution" o "exportar tipo a webApp".
+  "repositorio de red", "Ktor Client", "shared KMP", "androidMain", "jvmMain"
+  o "compartir lógica entre Android y servidor".
 ---
 
 # KMP Core Feature — Procedimientos para shared/
@@ -17,32 +17,28 @@ description: >
 ## Contexto de Arquitectura
 
 `shared/` es el módulo KMP central de ZenTrack. Compila a dos targets:
-- **JVM** → consumido por `server/` y `composeApp/`.
-- **JS** → compilado a bundle + ficheros `.d.ts` consumidos por `webApp/` vía paquete npm local.
+- **JVM** → consumido por `server/` y `cli/`.
+- **Android** → consumido por `androidApp/`.
 
 `commonMain` es la **única fuente de verdad** de todos los tipos de dominio. Cualquier modelo o DTO que exista aquí se propaga automáticamente a todos los clientes mediante compilación, sin duplicación manual.
 
 ```
 shared/commonMain  (@Serializable data class Task, Workspace…)
-      ↓  ./gradlew :shared:jsBrowserLibraryDistribution
-shared/build/dist/js/productionLibrary/
-  ├── shared.js        → runtime JS
-  └── shared.d.ts      → TypeScript type definitions
-      ↓
-webApp/  →  import { Task } from 'shared'
+      ↓  jvmMain (CIO engine)       ↓  androidMain (OkHttp engine)
+   server/ + cli/                  androidApp/
 ```
 
 ---
 
 ## Reglas Absolutas (no negociables)
 
-Estas reglas derivan /sde `shared/CLAUDE.md` y `AGENTS.md`. Violarlas rompe uno o más targets de compilación.
+Estas reglas derivan de `shared/CLAUDE.md` y `AGENTS.md`. Violarlas rompe uno o más targets de compilación.
 
 ### commonMain — Pureza de Plataforma
 
-- **PROHIBIDO** importar `android.*`, `ios.*`, `java.*` o `androidx.*` en cualquier archivo bajo `commonMain/`.
+- **PROHIBIDO** importar `android.*`, `java.*` o `androidx.*` en cualquier archivo bajo `commonMain/`.
 - **PERMITIDO** exclusivamente: `kotlin.*`, `kotlinx.*` (serialization, coroutines, datetime) y dependencias declaradas en `commonMain.dependencies` del `build.gradle.kts`.
-- Si necesitas una API de plataforma (UUID, reloj de sistema, logging nativo), usa `expect/actual` o una `interface` inyectada con Koin desde `jvmMain`/`jsMain`.
+- Si necesitas una API de plataforma (UUID, reloj de sistema, logging nativo), usa `expect/actual` o una `interface` inyectada con Koin desde `jvmMain`/`androidMain`.
 
 ### expect/actual — Alcance Estricto
 
@@ -55,8 +51,8 @@ expect fun generateUuid(): String
 // jvmMain — CORRECTO: delega a la API nativa, cero lógica
 actual fun generateUuid(): String = java.util.UUID.randomUUID().toString()
 
-// jsMain — CORRECTO
-actual fun generateUuid(): String = js("crypto.randomUUID()") as String
+// androidMain — CORRECTO
+actual fun generateUuid(): String = java.util.UUID.randomUUID().toString()
 
 // PROHIBIDO — lógica de dominio dentro de un actual
 actual fun generateUuid(): String {
@@ -82,7 +78,6 @@ class JvmDateTimeProvider : DateTimeProvider {
 ### Dependencias — Solo desde libs.versions.toml
 
 - **PROHIBIDO** hardcodear versiones en `build.gradle.kts`. Toda versión va en `gradle/libs.versions.toml`.
-- Las dependencias JS (bindings de librerías npm) van en `jsMain.dependencies` dentro del `build.gradle.kts` de `shared/` usando `npm("nombre-paquete", "versión")`. **PROHIBIDO** añadirlas directamente en `webApp/package.json` si corresponden a bindings del módulo KMP.
 
 ---
 
@@ -123,28 +118,10 @@ enum class TaskPriority { LOW, MEDIUM, HIGH, URGENT }
 ```
 
 **Reglas de modelado:**
-- Usa `String` para UUIDs (no `java.util.UUID` — no es portable a JS).
+- Usa `String` para UUIDs (no `java.util.UUID` — no es portable a Android target sin `androidMain`).
 - Usa `String` para fechas ISO-8601 (no `java.time.*`). Si necesitas aritmética de fechas, declara `expect fun` o usa `kotlinx-datetime`.
 - Los campos opcionales usan `val campo: Tipo? = null`. No uses `lateinit var`.
 - `displayId` es inmutable: nunca lo recalcules en el cliente; confía en el valor que devuelve el servidor.
-
-**Paso 3 — Exportar a JS** si el tipo necesita ser instanciable (no solo deserializable) desde TypeScript:
-
-```kotlin
-@JsExport
-@Serializable
-data class Task(...)
-```
-
-Nota: `@JsExport` en una `data class` con `@Serializable` puede requerir `@OptIn(ExperimentalJsExport::class)`. Añade la anotación solo si `webApp/` necesita construir instancias directamente; para tipos de solo lectura, `@Serializable` con `generateTypeScriptDefinitions()` ya genera las definiciones `.d.ts`.
-
-**Paso 4 — Regenerar TypeScript definitions:**
-
-```bash
-./gradlew :shared:jsBrowserLibraryDistribution
-```
-
-Nunca edites los `.d.ts` generados manualmente.
 
 ---
 
@@ -181,7 +158,7 @@ data class TaskResponse(
 ```
 
 **Reglas:**
-- Todos los DTOs son `@Serializable data class`. Sin `@JsExport` salvo necesidad explícita.
+- Todos los DTOs son `@Serializable data class`.
 - Los campos opcionales con default no requieren `@Required`; úsalo solo si el servidor rechaza la ausencia del campo en JSON.
 - No incluyas lógica de transformación dentro del DTO; si el servidor devuelve un campo que el cliente debe transformar, hazlo en el repositorio.
 - No reutilices un DTO de Request como Response ni viceversa, aunque los campos coincidan hoy.
@@ -204,7 +181,7 @@ network/
 
 #### 3a. Configurar el HttpClient (si no existe)
 
-El cliente debe configurarse en `commonMain` usando únicamente motores y plugins KMP. El motor real (`CIO` para JVM, `Js` para JS) se inyecta desde `jvmMain`/`jsMain` mediante Koin.
+El cliente debe configurarse en `commonMain` usando únicamente motores y plugins KMP. El motor real (`CIO` para JVM, `OkHttp` para Android) se inyecta desde `jvmMain`/`androidMain` mediante Koin.
 
 ```kotlin
 // commonMain/network/ZenTrackApiClient.kt
@@ -212,12 +189,6 @@ class ZenTrackApiClient(
     private val httpClient: HttpClient,
     private val baseUrl: String
 )
-
-// commonMain/di/NetworkModule.kt
-val networkModule = module {
-    single { provideHttpClient() }          // expect fun
-    single { ZenTrackApiClient(get(), get(named("baseUrl"))) }
-}
 
 // commonMain — expect para la construcción del cliente
 expect fun provideHttpClient(): HttpClient
@@ -228,12 +199,12 @@ expect fun provideHttpClient(): HttpClient
 actual fun provideHttpClient(): HttpClient = HttpClient(CIO) {
     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     install(Auth) { bearer { /* token desde Koin */ } }
-    defaultRequest { url(/* baseUrl */) }
 }
 
-// jsMain/di/NetworkModuleJs.kt
-actual fun provideHttpClient(): HttpClient = HttpClient(Js) {
+// androidMain/di/NetworkModuleAndroid.kt
+actual fun provideHttpClient(): HttpClient = HttpClient(OkHttp) {
     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+    install(Auth) { bearer { /* token desde Koin */ } }
 }
 ```
 
@@ -301,10 +272,10 @@ Si el cambio requiere una nueva librería en `commonMain` (por ejemplo, `kotlinx
    }
    ```
 
-3. Si es una dependencia JS (binding npm), añádela en `jsMain.dependencies`:
+3. Si es una dependencia específica de Android, añádela en `androidMain.dependencies`:
    ```kotlin
-   jsMain.dependencies {
-       implementation(npm("uuid", "9.0.0"))
+   androidMain.dependencies {
+       implementation(libs.ktor.client.okhttp)
    }
    ```
 
@@ -317,13 +288,11 @@ Si el cambio requiere una nueva librería en `commonMain` (por ejemplo, `kotlinx
 Antes de marcar el cambio como completado, verifica cada punto:
 
 ```
-[ ] No hay imports de android.*, java.*, ios.* ni androidx.* en commonMain/
+[ ] No hay imports de android.*, java.* ni androidx.* en commonMain/
 [ ] Toda versión de dependencia está en gradle/libs.versions.toml
 [ ] Los bloques actual contienen solo adaptadores de plataforma, sin lógica de dominio
 [ ] Los modelos y DTOs son data class @Serializable con tipos portables (String para UUID/fecha)
 [ ] Las funciones de red son suspend y usan .body<T>() para deserialización
-[ ] Se ejecutó ./gradlew :shared:jsBrowserLibraryDistribution tras modificar tipos
-[ ] Los ficheros .d.ts generados NO fueron editados manualmente
 [ ] La ruta HTTP coincide con docs/SDD/PLAN.md sección 3
 [ ] El módulo Koin correspondiente registra los nuevos bindings
 ```
@@ -331,9 +300,8 @@ Antes de marcar el cambio como completado, verifica cada punto:
 Ejecuta los tests de compilación cruzada para confirmar que ambos targets compilan:
 
 ```bash
-./gradlew :shared:jvmTest     # Valida target JVM
-./gradlew :shared:jsTest      # Valida target JS
-./gradlew :shared:jsBrowserLibraryDistribution  # Genera bundle + .d.ts
+./gradlew :shared:jvmTest               # Valida target JVM
+./gradlew :shared:testDebugUnitTest     # Valida target Android
 ```
 
 ---
@@ -348,13 +316,6 @@ shared/src/
 │   ├── repository/    → Interfaces de repositorio (contratos, sin implementación)
 │   ├── network/       → HttpClient config + clases *Api
 │   └── di/            → Módulos Koin comunes (networkModule, etc.)
-├── jvmMain/kotlin/    → actual implementations + implementaciones de interfaces JVM
-└── jsMain/kotlin/     → actual implementations + implementaciones de interfaces JS
-```
-
-Los archivos de salida del compilador JS se generan en:
-```
-shared/build/dist/js/productionLibrary/
-  ├── shared.js
-  └── shared.d.ts     ← consumido por webApp/ vía "shared": "0.0.0-unspecified"
+├── jvmMain/kotlin/    → actual implementations JVM (server + cli)
+└── androidMain/kotlin/ → actual implementations Android (androidApp)
 ```

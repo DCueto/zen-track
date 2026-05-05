@@ -1,1 +1,0 @@
-../../.agents/skills/compose-desktop-ui/SKILL.md

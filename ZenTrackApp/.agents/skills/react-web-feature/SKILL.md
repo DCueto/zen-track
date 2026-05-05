@@ -57,37 +57,32 @@ screens/ y components/
 
 ## Reglas Absolutas
 
-### Tipos — Interoperabilidad con shared
+### Tipos — Generados desde OpenAPI
 
-Los tipos generados por KMP en `shared.d.ts` son la fuente de verdad de los modelos
-de dominio. Redefinirlos en TypeScript crea divergencias silenciosas: ambas
-definiciones compilarán, pero la del frontend puede quedarse desactualizada cuando
-el modelo Kotlin cambie.
+Los tipos en `src/types/api.ts` son la fuente de verdad de los modelos de dominio.
+Este fichero se genera automáticamente desde la spec OpenAPI del servidor Ktor con
+`openapi-typescript`. **NUNCA lo edites manualmente.**
 
 ```typescript
-// PROHIBIDO — duplica lo que ya existe en shared y divergirá silenciosamente
+// PROHIBIDO — duplica lo que ya existe en api.ts y divergirá silenciosamente
 export interface Task { id: string; title: string; statusId: string; /* ... */ }
 
-// CORRECTO — extiende o re-exporta desde shared
-import { Task as SharedTask } from 'shared';
-// Re-export directo si no necesitas extensiones
-export type { Task } from 'shared';
+// CORRECTO — importa desde el fichero generado
+import type { components } from '../types/api';
+type Task = components['schemas']['Task'];
 
-// O con extensión fronted-específica:
-export interface Task extends SharedTask {
+// Con extensión frontend-específica:
+export interface TaskWithUI extends Task {
   isSelected?: boolean;   // estado UI local, no existe en el dominio
 }
 ```
 
-Cuando un tipo de shared use `kotlin.collections.List` u otros tipos Kotlin
-específicos, crea un adaptador en `src/types/` que lo convierta a tipos TypeScript
-nativos. Esa conversión debe ocurrir en `services/`, no en componentes.
-
-**Antes de tocar un tipo:** ejecuta:
+**Antes de tocar un tipo:** regenera el fichero con el servidor corriendo:
 ```bash
-cd .. && ./gradlew :shared:jsBrowserLibraryDistribution
+npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
 ```
-Si el tipo no existe en `shared.d.ts`, agrégalo al modelo KMP y regenera.
+Si el tipo no existe en `api.ts`, añádelo al modelo Kotlin en `shared/commonMain`
+y asegúrate de que el endpoint correspondiente lo exponga en la spec.
 
 ### Estado — Zustand con Selector Pattern
 
@@ -195,37 +190,41 @@ reciben resultados tipados, no objetos `Error` crudos.
 
 ## Procedimiento: Crear una Nueva Vista (paso a paso)
 
-### Paso 1 — Verificar los tipos en shared
+### Paso 1 — Verificar los tipos en api.ts
 
 Lee `docs/SDD/PLAN.md` sección 3 para confirmar qué endpoint consume la vista.
-Luego verifica que los tipos necesarios existen en `shared.d.ts`:
+Luego verifica que los tipos necesarios existen en `src/types/api.ts`:
 
 ```bash
-# Regenera las definiciones TypeScript desde los modelos KMP actuales
-cd .. && ./gradlew :shared:jsBrowserLibraryDistribution
-# Revisa qué exporta el módulo
-cat shared/build/dist/js/productionLibrary/shared.d.ts | grep "export"
+# Regenera los tipos desde la spec OpenAPI (requiere servidor corriendo)
+npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+# Revisa los schemas disponibles
+grep '"schemas"' src/types/api.ts
 ```
 
-Si falta un tipo, primero añádelo en `shared/commonMain` y regenera.
+Si falta un tipo, primero añádelo al modelo Kotlin en `shared/commonMain` y
+asegúrate de que el endpoint lo exponga. Luego regenera.
 
 ---
 
 ### Paso 2 — Adaptar los Tipos en `src/types/`
 
-Crea un fichero por dominio en `src/types/`. Su rol es importar desde `shared`
-y exponer tipos TypeScript puros, sin rastro de interoperabilidad Kotlin.
+Crea un fichero por dominio en `src/types/`. Su rol es importar desde `api.ts`
+y exponer tipos TypeScript limpios para el resto de la app.
 
 ```typescript
 // src/types/task.types.ts
-export type { Task, TaskPriority } from 'shared';
-export type { CreateTaskRequest, TaskResponse } from 'shared';
+import type { components } from './api';
 
-// Si un tipo de shared usa colecciones Kotlin que TypeScript no resuelve bien,
-// crea un adaptador:
-import type { Task as SharedTask } from 'shared';
-export interface Task extends Omit<SharedTask, 'assignees'> {
-  assignees: string[];  // convierte kotlin.collections.List<String> a string[]
+// Re-exports directos si no necesitas extensiones
+export type Task = components['schemas']['Task'];
+export type TaskPriority = components['schemas']['TaskPriority'];
+export type CreateTaskRequest = components['schemas']['CreateTaskRequest'];
+export type TaskResponse = components['schemas']['TaskResponse'];
+
+// Con extensión frontend-específica:
+export interface TaskWithUI extends Task {
+  isSelected?: boolean;  // estado UI local, no existe en el dominio
 }
 ```
 
@@ -455,7 +454,7 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
 | Color en `sx` | `sx={{ color: '#1A237E' }}` | `sx={{ color: 'primary.main' }}` |
 | Props de componente MUI custom | `{ [key: string]: any }` | `extends ButtonProps` / `extends CardProps` |
 | URL de la API | `'http://localhost:8080'` hardcoded | `import.meta.env.VITE_API_BASE_URL` |
-| Tipo de dominio | Definir `interface Task { … }` local | `import type { Task } from 'shared'` |
+| Tipo de dominio | Definir `interface Task { … }` local | `import type { Task } from '../types/task.types'` (re-export de `api.ts`) |
 | Llamada HTTP | `axios.get(…)` | `apiFetch<T>(…)` con fetch nativo |
 | Token JWT | `localStorage.getItem('token')` directo | `useAuthStore.getState().token` |
 
@@ -466,10 +465,10 @@ export const TaskColumn: React.FC<TaskColumnProps> = ({
 Antes de marcar cualquier vista o componente como completado:
 
 ```
-TIPOS Y SHARED
-[ ] Todos los modelos de dominio importados desde 'shared', sin redefiniciones locales
-[ ] Se ejecutó ./gradlew :shared:jsBrowserLibraryDistribution antes de empezar
-[ ] Los adaptadores Kotlin/JS están en src/types/, no en componentes ni stores
+TIPOS Y OPENAPI
+[ ] Todos los modelos de dominio importados desde 'src/types/api.ts', sin redefiniciones locales
+[ ] Se regeneró src/types/api.ts con openapi-typescript antes de empezar
+[ ] Los tipos de dominio re-exportados desde src/types/*.types.ts, no importados desde api.ts directamente en componentes
 [ ] Cero usos de 'any' en interfaces de props o retornos de servicios
 
 ZUSTAND

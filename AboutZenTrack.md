@@ -14,10 +14,10 @@ Para garantizar que el proyecto es alcanzable en el tiempo de la formación, el 
 - **Vistas**: 
 	1. Tablero Kanban simple (To Do, In Progress, Done).
 	2. Dashboard minimalista con el resumen del sprint actual.
-- **Plataformas**: App desarrollada con Kotlin y KMP (focalizada inicialmente en Escritorio/Web).
+- **Plataformas**: App Android (Jetpack Compose), API REST (Ktor), CLI (Kotlin) y Web (React/TS).
 
 ### 3. Stack Tecnológico
-- **Lenguaje / Framework**: Kotlin y Kotlin Multiplatform (KMP) + Compose Multiplatform para la UI.
+- **Lenguaje / Framework**: Kotlin y Kotlin Multiplatform (KMP). Targets: `jvm` (server, CLI) y `androidTarget` (app móvil). Compose Android para UI. React 19 + TypeScript para web.
 
 - **Inteligencia Artificial**: SDK de OpenAI (o Google Gemini) integrado en el cliente/servidor.
 
