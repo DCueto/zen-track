@@ -34,6 +34,21 @@ Mantener coherencia arquitectónica entre módulos escritos en distintos lenguaj
 - **NUNCA** generes ni expongas URLs de servicios internos o externos sin autorización explícita del usuario.
 - **PROHIBIDO** deshabilitar Row Level Security (RLS) en PostgreSQL bajo ninguna circunstancia.
 
+### Archivos de Contexto Disponibles
+
+Antes de implementar cualquier tarea, lee los archivos relevantes de `.ai/`:
+
+| Archivo | Cuándo leerlo |
+|---|---|
+| `.ai/PROJECT_CONTEXT.md` | Visión general del proyecto, arquitectura y decisiones técnicas |
+| `.ai/WORKFLOW_FEATURE_REQUEST.md` | Al implementar una nueva feature |
+| `.ai/WORKFLOW_BUG_FIX.md` | Al corregir un bug |
+| `.ai/WORKFLOW_REFACTOR.md` | Al reestructurar código sin cambio de comportamiento |
+| `.ai/WORKFLOW_DOCUMENTATION.md` | Al escribir o actualizar documentación |
+| `.ai/FEATURE_API_ENDPOINT.md` | Al añadir un endpoint Ktor |
+| `.ai/FEATURE_ANDROID_SCREEN.md` | Al crear una pantalla Android nueva |
+| `.ai/FEATURE_REACT_SCREEN.md` | Al crear una pantalla o componente React nuevo |
+
 ### Estructura de Módulos (contexto rápido)
 
 | Módulo | Responsabilidad | CLAUDE.md específico |
