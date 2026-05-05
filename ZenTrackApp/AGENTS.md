@@ -80,6 +80,44 @@ cd webApp && npm run start                # Vite dev server
 cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
 ```
 
+## Estrategia de Testing
+
+### Principios globales
+
+- **SIEMPRE** escribe los tests junto con la implementación, no al final.
+- **PROHIBIDO** hacer merge de código sin tests para lógica de negocio nueva.
+- Para bug fixes, el orden obligatorio es: `test falla → fix → test pasa`.
+- **PROHIBIDO** `@Ignore` / `@Disabled` sin comentario que explique cuándo se habilitará.
+
+### Tipos de test por módulo
+
+| Módulo | Unit | Integration / Component | Herramientas |
+|---|---|---|---|
+| `server` | Use Cases / Services con fakes | Rutas con `testApplication { }` + Testcontainers (PostgreSQL real) | `ktor-server-test-host`, `kotlin.test` |
+| `shared` | Modelos, DTOs, lógica de repositorio con fakes | — | `kotlin.test` (multiplatform) |
+| `androidApp` | ViewModels con fake repositories | Composables con `createComposeRule()` | `kotlin.test`, Compose Testing |
+| `cli` | Comandos Clikt con fakes | — | `kotlin.test` |
+| `webApp` | Stores Zustand, services | Componentes y screens con React Testing Library | Vitest, `@testing-library/react` |
+
+### Regla sobre mocks vs fakes
+
+- **PROHIBIDO** mockear la base de datos en `server/`. Las políticas RLS solo funcionan con PostgreSQL real (Testcontainers).
+- **PROHIBIDO** MockK o Mockito en `shared/commonTest/` — no son multiplatform. Usa fake implementations de las interfaces de repositorio.
+- En `webApp/`, mockea los `services/` con `vi.fn()` en tests de componentes y stores; nunca mockees `fetch` directamente.
+
+### Comandos de test por módulo
+
+```bash
+./gradlew :server:test                    # server (unit + integration)
+./gradlew :shared:jvmTest                 # shared (target JVM)
+./gradlew :androidApp:testDebugUnitTest   # androidApp (unit)
+./gradlew :cli:test                       # cli
+cd webApp && npm run test:run             # webApp (Vitest, una pasada)
+./gradlew test                            # todos los módulos Kotlin
+```
+
+Consulta el `CLAUDE.md` de cada módulo para las convenciones detalladas de testing.
+
 ## Restricciones Globales
 
 - **PROHIBIDO** crear ramas manualmente salvo fallo del sistema; las ramas se generan desde la UI siguiendo el formato `[tipo]/[ID-TAREA]/[descripcion]`.

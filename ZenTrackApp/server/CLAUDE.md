@@ -70,3 +70,36 @@ Flujo obligatorio al recibir un evento `push`:
 - Usa `kotlinx.serialization`. **PROHIBIDO** Jackson o Gson en este módulo.
 - Los DTOs de request y response son `@Serializable data class` en `shared/commonMain`, no en `server/`. Así el cliente Desktop y Web reutilizan las mismas clases.
 - **NUNCA** expongas campos de BD internos (`password_hash`, `rls_policy_id`) en los DTOs de response.
+
+### Tests
+
+#### Tipos de test y ubicación
+
+```
+server/src/test/kotlin/
+├── core/      → Unit tests de Use Cases y Services (sin BD, sin HTTP)
+└── api/       → Integration tests de rutas con testApplication { }
+```
+
+#### Unit tests (core/)
+
+- Testean Use Cases y Services de forma aislada.
+- **SIEMPRE** usa **fake implementations** de los repositorios (interfaces definidas en `shared/`), nunca mocks de MockK/Mockito para la capa de persistencia.
+- No arrancan servidor, no tocan BD, son rápidos.
+
+#### Integration tests (api/)
+
+- Testean rutas completas con `testApplication { }` de `ktor-server-test-host`.
+- **PROHIBIDO** mockear la base de datos. Las políticas RLS solo funcionan contra un PostgreSQL real. Usa **Testcontainers** para levantar un PostgreSQL efímero por suite de tests.
+- Cada test siembra los datos que necesita y los limpia al terminar (no depende del orden de ejecución).
+- El JWT de test se genera con la misma clave que usa el servidor en test; no se bypasea la autenticación.
+
+#### Reglas transversales
+
+- **SIEMPRE** escribe el test junto con la implementación, no después.
+- **PROHIBIDO** hacer `@Ignore` o `@Disabled` sin un comentario que explique cuándo se habilitará.
+- Un test que pasa siempre (sin assertions reales) es peor que no tener test.
+
+```bash
+./gradlew :server:test
+```

@@ -75,3 +75,34 @@ Ver `androidApp/CLAUDE.md` para el playbook completo de Jetpack Compose + ViewMo
 ### Tipos para webApp/
 
 `webApp/` NO depende del módulo `shared` de Kotlin. Sus tipos TypeScript se generan desde la spec OpenAPI del servidor con `openapi-typescript`. Ver `webApp/CLAUDE.md` para el flujo completo.
+
+### Tests
+
+#### Ubicación
+
+```
+src/
+└── commonTest/kotlin/
+    ├── model/       → Tests de modelos y validaciones de dominio
+    ├── dto/         → Tests de serialización/deserialización de DTOs
+    └── repository/  → Tests de lógica de repositorio con fakes
+```
+
+#### Reglas
+
+- **PROHIBIDO** usar MockK o Mockito en `commonTest/` — no son multiplatform. Usa **fake implementations** de las interfaces de repositorio definidas en `commonMain/repository/`.
+- Los tests de `commonTest/` son Kotlin puro; no pueden importar `java.*`, `android.*` ni `io.ktor.*`.
+- Testea la serialización de los DTOs más críticos (`Task`, `Workspace`, `Project`) para detectar roturas de contrato antes de que lleguen al servidor o los clientes.
+
+```kotlin
+// CORRECTO — fake implementation, no mock
+class FakeTaskRepository : TaskRepository {
+    private val tasks = mutableListOf<Task>()
+    override suspend fun findById(id: String) = tasks.find { it.id == id }
+    override suspend fun save(task: Task) { tasks.add(task) }
+}
+```
+
+```bash
+./gradlew :shared:jvmTest
+```

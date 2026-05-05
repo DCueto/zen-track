@@ -125,6 +125,44 @@ npm run start   # Vite dev server con HMR
 npm run build   # tsc + vite build → dist/
 ```
 
+### Tests
+
+#### Stack y ubicación
+
+- Herramientas: **Vitest** + **@testing-library/react** + **@testing-library/user-event**.
+- Instala con: `npm install -D vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom jsdom`
+- Los archivos de test viven junto al código que testean: `TaskCard.tsx` → `TaskCard.test.tsx`.
+
+#### Qué testear y cómo
+
+| Capa | Qué testear | Cómo |
+|---|---|---|
+| `store/` | Transiciones de estado (acciones Zustand) | Test puro del store sin renderizar componentes |
+| `services/` | Lógica de construcción de requests y parseo de respuestas | Mock de `fetch` con `vi.fn()` |
+| `components/` | Comportamiento observable (render, clicks, inputs) | React Testing Library |
+| `screens/` | Flujos críticos de usuario | React Testing Library con store real |
+
+#### Reglas
+
+- **PROHIBIDO** snapshot tests como estrategia principal — se convierten en mantenimiento sin valor.
+- **SIEMPRE** testea comportamiento observable, nunca detalles de implementación (no busques por nombre de clase CSS ni por estructura DOM interna).
+- **NUNCA** uses `any` en tests; aplica las mismas reglas de tipado que en producción.
+- Mockea los `services/` en tests de screens/stores, no la implementación interna de `fetch`.
+
+```typescript
+// CORRECTO — testea comportamiento
+expect(screen.getByRole('button', { name: /crear tarea/i })).toBeInTheDocument();
+
+// PROHIBIDO — testea implementación interna
+expect(wrapper.find('.MuiButton-root')).toHaveLength(1);
+```
+
+```bash
+# Ejecutar tests:
+npm run test        # watch mode
+npm run test:run    # una sola pasada (CI)
+```
+
 ### Comandos de Verificación
 
 ```bash
@@ -133,6 +171,9 @@ npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
 
 # Type-check sin build:
 npx tsc --noEmit
+
+# Tests:
+npm run test:run
 
 # Build de producción:
 npm run build
