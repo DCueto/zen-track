@@ -116,9 +116,37 @@ Ventaja: si mañana hay que actualizar Ktor de 3.3.3 a 3.4.0, cambias **una lín
 
 ---
 
-## El Gradle Wrapper — `./gradlew`
+## El Gradle Wrapper — por qué `./gradlew` y no `gradle`
 
-Nunca instalas Gradle globalmente. El proyecto incluye el **Gradle Wrapper**: un script (`gradlew` en macOS/Linux, `gradlew.bat` en Windows) que descarga automáticamente la versión correcta de Gradle la primera vez.
+Si ejecutaras `gradle build` usarías la versión de Gradle instalada en tu máquina. El problema: tú puedes tener Gradle 8.x, tu compañero 7.x, el CI 6.x — cada versión genera builds diferentes con bugs y sintaxis distintos.
+
+El **Gradle Wrapper** resuelve esto. Es un pequeño script (`gradlew` en macOS/Linux, `gradlew.bat` en Windows) comprometido dentro del repositorio que:
+
+1. Lee la versión exacta de Gradle declarada en `gradle/wrapper/gradle-wrapper.properties`
+2. Si esa versión no está en caché local (`~/.gradle/wrapper/`), la descarga automáticamente
+3. La ejecuta — ignorando cualquier Gradle instalado globalmente
+
+```properties
+# gradle/wrapper/gradle-wrapper.properties
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+```
+
+Todo el equipo y el CI usan exactamente `8.11.1`, sin importar lo que tengan instalado.
+
+### La analogía en .NET: `global.json`
+
+```json
+// global.json — fuerza una versión específica del .NET SDK
+{
+  "sdk": { "version": "9.0.101" }
+}
+```
+
+`global.json` hace lo mismo: cuando existe, `dotnet build` usa esa versión aunque tengas otra instalada. La diferencia es que el Wrapper además **descarga** la versión si no existe — `global.json` solo selecciona entre las ya instaladas.
+
+### Por qué `./` delante
+
+En macOS/Linux, `.` significa "directorio actual". Sin `./`, el shell busca `gradlew` en el `PATH` del sistema y no lo encuentra porque es un archivo local del proyecto. El `./` le dice explícitamente "ejecuta este archivo que está aquí mismo".
 
 ```bash
 ./gradlew build          # compila todo el monorepo
@@ -127,8 +155,6 @@ Nunca instalas Gradle globalmente. El proyecto incluye el **Gradle Wrapper**: un
 ```
 
 El `:` antes del nombre identifica el módulo. Sin `:`, el comando aplica a todos los módulos.
-
-Es el equivalente conceptual a que `dotnet` ya viene con el SDK instalado — excepto que aquí el "SDK de build" (Gradle) se descarga por proyecto, garantizando que todos en el equipo usen exactamente la misma versión.
 
 ---
 
