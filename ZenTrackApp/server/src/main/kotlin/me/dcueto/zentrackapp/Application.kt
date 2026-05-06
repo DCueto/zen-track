@@ -18,6 +18,8 @@ fun main() {
 }
 
 fun Application.module() {
+    // Serialization primero: StatusPages usa call.respond(ErrorResponse(...)),
+    // que necesita ContentNegotiation ya instalado para serializar a JSON.
     configureSerialization()
     configureStatusPages()
     configureCors()
