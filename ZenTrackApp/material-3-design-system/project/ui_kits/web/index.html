@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Material 3 — Web UI Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  body { margin: 0; background: var(--md-sys-color-surface-dim); }
+  .stage { display: flex; gap: 24px; padding: 32px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+  .device { width: 412px; height: 820px; background: var(--md-sys-color-surface);
+            border-radius: 32px; overflow: hidden; position: relative;
+            box-shadow: var(--md-sys-elevation-level3); }
+  .label { font: 500 12px/1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase;
+           color: var(--md-sys-color-on-surface-variant); margin-bottom: 8px; text-align: center; }
+  .frame { display: flex; flex-direction: column; align-items: center; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame"><div class="label">Inbox</div><div id="root-inbox" class="device"></div></div>
+  <div class="frame"><div class="label">Compose</div><div id="root-compose" class="device"></div></div>
+  <div class="frame"><div class="label">Settings</div><div id="root-settings" class="device"></div></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="Components.jsx"></script>
+<script type="text/babel" src="Inbox.jsx"></script>
+<script type="text/babel" src="Compose.jsx"></script>
+<script type="text/babel" src="Settings.jsx"></script>
+
+<script type="text/babel">
+  // App-level click-thru: each device renders one screen but Inbox -> Compose toggles within its own device.
+  function InboxDevice() {
+    const [composing, setComposing] = React.useState(false);
+    return composing
+      ? <Compose onClose={() => setComposing(false)} onSend={() => setComposing(false)} />
+      : <Inbox onCompose={() => setComposing(true)} />;
+  }
+  ReactDOM.createRoot(document.getElementById("root-inbox")).render(<InboxDevice />);
+  ReactDOM.createRoot(document.getElementById("root-compose")).render(<Compose onClose={() => {}} onSend={() => {}} />);
+  ReactDOM.createRoot(document.getElementById("root-settings")).render(<Settings onBack={() => {}} />);
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Floating toolbar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 28px 20px; }
+  .bar {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-full);
+    padding: 6px;
+    box-shadow: var(--md-sys-elevation-level3);
+  }
+  .bar button {
+    width: 44px; height: 44px; border: none; cursor: pointer;
+    background: transparent; color: var(--md-sys-color-on-surface);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background var(--md-sys-motion-duration-short3);
+  }
+  .bar button:hover { background: var(--md-sys-color-surface-container-high); }
+  .bar .accent {
+    background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);
+  }
+  .bar .div { width: 1px; height: 24px; background: var(--md-sys-color-outline-variant); margin: 0 4px; }
+  .vert { display: inline-flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 28px; background: var(--md-sys-color-surface-container); box-shadow: var(--md-sys-elevation-level3); }
+  .vert button { width: 44px; height: 44px; border: none; cursor: pointer; background: transparent; color: var(--md-sys-color-on-surface); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="bar">
+      <button><span class="material-symbols-outlined">format_bold</span></button>
+      <button><span class="material-symbols-outlined">format_italic</span></button>
+      <button><span class="material-symbols-outlined">format_underlined</span></button>
+      <span class="div"></span>
+      <button><span class="material-symbols-outlined">format_list_bulleted</span></button>
+      <button><span class="material-symbols-outlined">format_list_numbered</span></button>
+      <span class="div"></span>
+      <button class="accent"><span class="material-symbols-outlined">add</span></button>
+    </div>
+    <div class="vert">
+      <button><span class="material-symbols-outlined">edit</span></button>
+      <button><span class="material-symbols-outlined">share</span></button>
+      <button><span class="material-symbols-outlined">delete</span></button>
+    </div>
+  </div>
+</body>
+</html>

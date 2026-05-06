@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Progress indicators</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .lin {
+    width: 320px; height: 4px;
+    background: var(--md-sys-color-surface-container-highest);
+    border-radius: 2px; position: relative; overflow: hidden;
+  }
+  .lin .fill {
+    position: absolute; top: 0; left: 0; height: 100%;
+    background: var(--md-sys-color-primary); border-radius: 2px;
+  }
+  .lin .gap {
+    position: absolute; top: 0; height: 100%; width: 4px;
+    background: var(--md-sys-color-surface);
+  }
+  .ring { width: 56px; height: 56px; }
+  .ring circle { fill: none; stroke-width: 4; stroke-linecap: round; }
+  .ring .bg { stroke: var(--md-sys-color-surface-container-highest); }
+  .ring .fg { stroke: var(--md-sys-color-primary); transform-origin: center; transform: rotate(-90deg); }
+  .label { font: 500 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Linear 35%</span>
+    <div class="lin"><div class="fill" style="width:33%;"></div><div class="gap" style="left:33%;"></div><div class="fill" style="left:35%;width:65%;background:color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);"></div></div>
+    <span class="label">35%</span>
+  </div>
+  <div class="row"><span class="lbl">Linear 70%</span>
+    <div class="lin"><div class="fill" style="width:68%;"></div><div class="gap" style="left:68%;"></div><div class="fill" style="left:70%;width:30%;background:color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);"></div></div>
+    <span class="label">70%</span>
+  </div>
+  <div class="row"><span class="lbl">Circular</span>
+    <svg class="ring" viewBox="0 0 56 56">
+      <circle class="bg" cx="28" cy="28" r="22"></circle>
+      <circle class="fg" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="48"></circle>
+    </svg>
+    <svg class="ring" viewBox="0 0 56 56">
+      <circle class="bg" cx="28" cy="28" r="22"></circle>
+      <circle class="fg" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="14"></circle>
+    </svg>
+    <svg class="ring" viewBox="0 0 56 56">
+      <circle class="bg" cx="28" cy="28" r="22"></circle>
+      <circle class="fg" cx="28" cy="28" r="22" stroke-dasharray="138" stroke-dashoffset="98"></circle>
+    </svg>
+  </div>
+</body>
+</html>

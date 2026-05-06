@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Colors — Surface</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .stack { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .swatch { border-radius: 8px; padding: 10px 12px; min-height: 96px; border: 1px solid var(--md-sys-color-outline-variant); display: flex; flex-direction: column; justify-content: space-between; }
+  .name { font: 500 11px/1.2 var(--md-ref-typeface-plain); letter-spacing: 0.03em; text-transform: uppercase; }
+  .hex  { font: 500 12px/1.1 var(--md-ref-typeface-mono); opacity: 0.8; }
+  .label { font: 500 12px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.7; margin: 14px 0 6px; }
+  .out { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .out .swatch { min-height: 60px; }
+</style>
+</head>
+<body>
+  <div class="label">Surface containers (tonal elevation 0 → 5)</div>
+  <div class="stack">
+    <div class="swatch" style="background: var(--md-sys-color-surface-container-lowest)"><div class="name">Lowest</div><div class="hex">#FFFFFF</div></div>
+    <div class="swatch" style="background: var(--md-sys-color-surface-container-low)"><div class="name">Low</div><div class="hex">#F7F2FA</div></div>
+    <div class="swatch" style="background: var(--md-sys-color-surface-container)"><div class="name">Container</div><div class="hex">#F3EDF7</div></div>
+    <div class="swatch" style="background: var(--md-sys-color-surface-container-high)"><div class="name">High</div><div class="hex">#ECE6F0</div></div>
+    <div class="swatch" style="background: var(--md-sys-color-surface-container-highest)"><div class="name">Highest</div><div class="hex">#E6E0E9</div></div>
+  </div>
+
+  <div class="label">Outlines</div>
+  <div class="out">
+    <div class="swatch" style="background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline);"><div class="name">Outline (3:1)</div><div class="hex">#79747E</div></div>
+    <div class="swatch" style="background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant);"><div class="name">Outline variant</div><div class="hex">#CAC4D0</div></div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Colors — Primary</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .swatch { border-radius: 12px; padding: 14px 14px 16px; min-height: 96px; display: flex; flex-direction: column; justify-content: space-between; }
+  .swatch .name { font: 500 12px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.85; }
+  .swatch .hex { font: 500 14px/1.1 var(--md-ref-typeface-mono); }
+  .swatch .role { font: 400 13px/1.2 var(--md-ref-typeface-plain); margin-top: 4px; }
+  .container-row { margin-top: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="swatch" style="background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);">
+      <div class="name">Primary</div>
+      <div><div class="role">on-primary text</div><div class="hex">#6750A4</div></div>
+    </div>
+    <div class="swatch" style="background: var(--md-sys-color-secondary); color: var(--md-sys-color-on-secondary);">
+      <div class="name">Secondary</div>
+      <div><div class="role">on-secondary</div><div class="hex">#625B71</div></div>
+    </div>
+    <div class="swatch" style="background: var(--md-sys-color-tertiary); color: var(--md-sys-color-on-tertiary);">
+      <div class="name">Tertiary</div>
+      <div><div class="role">on-tertiary</div><div class="hex">#7D5260</div></div>
+    </div>
+    <div class="swatch" style="background: var(--md-sys-color-error); color: var(--md-sys-color-on-error);">
+      <div class="name">Error</div>
+      <div><div class="role">on-error</div><div class="hex">#B3261E</div></div>
+    </div>
+  </div>
+  <div class="container-row">
+    <div class="swatch" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);">
+      <div class="name">Primary container</div>
+      <div><div class="role">on-primary-container</div><div class="hex">#EADDFF</div></div>
+    </div>
+    <div class="swatch" style="background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container);">
+      <div class="name">Secondary container</div>
+      <div><div class="role">on-secondary-container</div><div class="hex">#E8DEF8</div></div>
+    </div>
+  </div>
+</body>
+</html>

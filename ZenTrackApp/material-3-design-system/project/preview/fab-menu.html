@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FAB menu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 18px 20px; }
+  .stage {
+    position: relative; height: 240px;
+    background: var(--md-sys-color-surface-container-low);
+    border-radius: 16px; padding: 16px;
+    overflow: hidden;
+  }
+  .menu { position: absolute; right: 24px; bottom: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+  .item { display: inline-flex; align-items: center; gap: 12px; }
+  .item .label {
+    background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface);
+    padding: 8px 14px; border-radius: var(--md-sys-shape-corner-full);
+    font: 500 14px/1 var(--md-ref-typeface-plain); box-shadow: var(--md-sys-elevation-level1);
+  }
+  .item .pip {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container);
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: var(--md-sys-elevation-level1);
+  }
+  .fab-main {
+    width: 64px; height: 64px; border-radius: 20px; border: none; cursor: pointer;
+    background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);
+    box-shadow: var(--md-sys-elevation-level3);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform var(--md-sys-motion-duration-medium2) var(--md-sys-motion-spring-default-spatial);
+  }
+  .fab-main .material-symbols-outlined { font-size: 28px; transform: rotate(45deg); }
+  .pip .material-symbols-outlined { font-size: 24px; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="menu">
+      <div class="item"><span class="label">Snooze</span><span class="pip"><span class="material-symbols-outlined">snooze</span></span></div>
+      <div class="item"><span class="label">Archive</span><span class="pip"><span class="material-symbols-outlined">archive</span></span></div>
+      <div class="item"><span class="label">Label</span><span class="pip"><span class="material-symbols-outlined">label</span></span></div>
+      <button class="fab-main"><span class="material-symbols-outlined">add</span></button>
+    </div>
+  </div>
+</body>
+</html>

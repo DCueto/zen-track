@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Carousel</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .car { display: flex; gap: 8px; height: 180px; align-items: stretch; overflow: hidden; }
+  .item {
+    flex: 0 0 auto; border-radius: 28px; position: relative; overflow: hidden;
+    color: white; padding: 16px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    transition: flex-basis var(--md-sys-motion-duration-medium2) var(--md-sys-motion-spring-default-spatial);
+    font-family: var(--md-ref-typeface-plain);
+  }
+  .item.hero { flex: 0 0 320px; background: linear-gradient(135deg, #6750A4 0%, #4F378B 100%); }
+  .item.med  { flex: 0 0 140px; background: linear-gradient(135deg, #7D5260 0%, #492532 100%); }
+  .item.sm   { flex: 0 0 88px;  background: linear-gradient(135deg, #625B71 0%, #1D192B 100%); }
+  .item.xs   { flex: 0 0 56px;  background: linear-gradient(135deg, #4A6577 0%, #1F3A4D 100%); }
+  .item h5 { margin: 0; font: 500 18px/1.25 var(--md-ref-typeface-plain); }
+  .item .meta { font: 400 12px/1.2 var(--md-ref-typeface-plain); opacity: 0.85; margin-top: 4px; }
+  .item.med h5, .item.sm h5 { font-size: 14px; }
+  .item.xs { padding: 0; }
+</style>
+</head>
+<body>
+  <div class="car">
+    <div class="item hero"><h5>Material 3 Expressive</h5><div class="meta">Article · 8 min</div></div>
+    <div class="item med"><h5>Tonal palettes</h5><div class="meta">Guide</div></div>
+    <div class="item sm"><h5>Shape</h5></div>
+    <div class="item xs"></div>
+    <div class="item xs"></div>
+  </div>
+</body>
+</html>

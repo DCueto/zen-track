@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Text Fields</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .lbl { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); margin-bottom: 6px; }
+
+  /* Filled text field */
+  .tf-filled { position: relative; background: var(--md-sys-color-surface-container-highest);
+               border-top-left-radius: var(--md-sys-shape-corner-extra-small);
+               border-top-right-radius: var(--md-sys-shape-corner-extra-small);
+               border-bottom: 1px solid var(--md-sys-color-on-surface-variant); padding: 8px 16px 8px; }
+  .tf-filled .label { font: 400 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-primary); margin-bottom: 4px; }
+  .tf-filled input { width: 100%; border: none; background: transparent; outline: none; color: var(--md-sys-color-on-surface);
+                     font: 400 16px/24px var(--md-ref-typeface-plain); padding: 0; }
+  .tf-filled.focus { border-bottom: 2px solid var(--md-sys-color-primary); padding-bottom: 7px; }
+
+  /* Outlined text field */
+  .tf-outlined { position: relative; border: 1px solid var(--md-sys-color-outline);
+                 border-radius: var(--md-sys-shape-corner-extra-small); padding: 8px 16px; }
+  .tf-outlined.focus { border: 2px solid var(--md-sys-color-primary); padding: 7px 15px; }
+  .tf-outlined .label { position: absolute; top: -8px; left: 12px; padding: 0 4px; background: var(--md-sys-color-surface);
+                        font: 400 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-primary); }
+  .tf-outlined input { width: 100%; border: none; background: transparent; outline: none; color: var(--md-sys-color-on-surface);
+                       font: 400 16px/24px var(--md-ref-typeface-plain); padding: 0; }
+  .help { font: 400 12px/16px var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); margin: 4px 16px 0; }
+  .help.error { color: var(--md-sys-color-error); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div>
+      <div class="lbl">Filled · resting</div>
+      <div class="tf-filled"><div class="label">Email</div><input value="aiden@example.com"></div>
+    </div>
+    <div>
+      <div class="lbl">Filled · focus</div>
+      <div class="tf-filled focus"><div class="label">Email</div><input value="aiden@example.com"></div>
+    </div>
+    <div>
+      <div class="lbl">Outlined · resting</div>
+      <div class="tf-outlined"><div class="label">Full name</div><input value="Aiden Patel"></div>
+      <div class="help">Required</div>
+    </div>
+    <div>
+      <div class="lbl">Outlined · error</div>
+      <div class="tf-outlined" style="border-color: var(--md-sys-color-error)"><div class="label" style="color: var(--md-sys-color-error)">Password</div><input value="••••" type="password"></div>
+      <div class="help error">Must be at least 8 characters</div>
+    </div>
+  </div>
+</body>
+</html>

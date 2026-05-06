@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Menu & divider</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 16px 20px; }
+  .menu {
+    width: 240px; background: var(--md-sys-color-surface-container);
+    border-radius: var(--md-sys-shape-corner-small);
+    padding: 8px 0; box-shadow: var(--md-sys-elevation-level2);
+  }
+  .mi {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 12px; height: 48px; cursor: pointer;
+    font: 400 14px/1 var(--md-ref-typeface-plain);
+    color: var(--md-sys-color-on-surface);
+  }
+  .mi:hover { background: var(--md-sys-color-surface-container-high); }
+  .mi .material-symbols-outlined { color: var(--md-sys-color-on-surface-variant); font-size: 20px; }
+  .mi .kbd { margin-left: auto; font: 500 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); }
+  .div { height: 1px; background: var(--md-sys-color-outline-variant); margin: 8px 0; }
+  .danger .material-symbols-outlined, .danger { color: var(--md-sys-color-error); }
+</style>
+</head>
+<body>
+  <div class="row" style="align-items:flex-start;">
+    <div class="menu">
+      <div class="mi"><span class="material-symbols-outlined">edit</span>Edit<span class="kbd">⌘E</span></div>
+      <div class="mi"><span class="material-symbols-outlined">content_copy</span>Duplicate<span class="kbd">⌘D</span></div>
+      <div class="mi"><span class="material-symbols-outlined">share</span>Share<span class="kbd">⌘⇧S</span></div>
+      <div class="div"></div>
+      <div class="mi"><span class="material-symbols-outlined">archive</span>Archive</div>
+      <div class="mi danger"><span class="material-symbols-outlined">delete</span>Delete</div>
+    </div>
+  </div>
+</body>
+</html>

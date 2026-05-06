@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chips</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .lbl { width: 96px; font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+  .chip { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--md-sys-shape-corner-small);
+          font: 500 14px/1 var(--md-ref-typeface-plain); letter-spacing: 0.00625rem;
+          background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface-variant);
+          border: 1px solid var(--md-sys-color-outline-variant); cursor: pointer; }
+  .chip .material-symbols-outlined { font-size: 18px; }
+  .chip-selected { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); border-color: transparent; }
+  .chip-input { background: var(--md-sys-color-surface-container); border-color: transparent; padding-right: 8px; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <span class="lbl">Assist</span>
+    <div class="chip"><span class="material-symbols-outlined">event</span>Add to calendar</div>
+    <div class="chip"><span class="material-symbols-outlined">share</span>Share</div>
+  </div>
+  <div class="row">
+    <span class="lbl">Filter</span>
+    <div class="chip">All</div>
+    <div class="chip chip-selected"><span class="material-symbols-outlined">check</span>Photos</div>
+    <div class="chip">Videos</div>
+    <div class="chip">Docs</div>
+  </div>
+  <div class="row">
+    <span class="lbl">Input</span>
+    <div class="chip chip-input">Aiden Patel<span class="material-symbols-outlined">close</span></div>
+    <div class="chip chip-input">Priya Singh<span class="material-symbols-outlined">close</span></div>
+  </div>
+  <div class="row">
+    <span class="lbl">Suggestion</span>
+    <div class="chip">Sounds great</div>
+    <div class="chip">On my way</div>
+    <div class="chip">Running late</div>
+  </div>
+</body>
+</html>

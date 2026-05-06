@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Material Symbols Iconography</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .lbl { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); margin-bottom: 8px; }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 14px; }
+  .ico { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 56px; }
+  .ico .name { font: 400 11px/1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface-variant); }
+  .material-symbols-outlined { color: var(--md-sys-color-on-surface); font-size: 28px; }
+  .filled { font-variation-settings: 'FILL' 1; }
+  .bold { font-variation-settings: 'wght' 700; }
+  .lg { font-size: 40px; font-variation-settings: 'opsz' 40; }
+</style>
+</head>
+<body>
+  <div class="lbl">Material Symbols Outlined · loaded from Google Fonts CDN</div>
+  <div class="row">
+    <div class="ico"><span class="material-symbols-outlined">home</span><span class="name">home</span></div>
+    <div class="ico"><span class="material-symbols-outlined">search</span><span class="name">search</span></div>
+    <div class="ico"><span class="material-symbols-outlined">favorite</span><span class="name">favorite</span></div>
+    <div class="ico"><span class="material-symbols-outlined">settings</span><span class="name">settings</span></div>
+    <div class="ico"><span class="material-symbols-outlined">notifications</span><span class="name">notifications</span></div>
+    <div class="ico"><span class="material-symbols-outlined">account_circle</span><span class="name">account</span></div>
+    <div class="ico"><span class="material-symbols-outlined">add</span><span class="name">add</span></div>
+    <div class="ico"><span class="material-symbols-outlined">edit</span><span class="name">edit</span></div>
+    <div class="ico"><span class="material-symbols-outlined">delete</span><span class="name">delete</span></div>
+    <div class="ico"><span class="material-symbols-outlined">share</span><span class="name">share</span></div>
+  </div>
+  <div class="lbl">Variable axes — fill, weight, optical size</div>
+  <div class="row">
+    <div class="ico"><span class="material-symbols-outlined">favorite</span><span class="name">default</span></div>
+    <div class="ico"><span class="material-symbols-outlined filled">favorite</span><span class="name">FILL 1</span></div>
+    <div class="ico"><span class="material-symbols-outlined bold">favorite</span><span class="name">wght 700</span></div>
+    <div class="ico"><span class="material-symbols-outlined lg">favorite</span><span class="name">opsz 40</span></div>
+  </div>
+</body>
+</html>

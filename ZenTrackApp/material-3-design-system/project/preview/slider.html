@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Slider</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .track { position: relative; width: 320px; height: 16px; }
+  .rail { position: absolute; top: 6px; left: 0; right: 0; height: 4px; background: var(--md-sys-color-surface-container-highest); border-radius: 2px; }
+  .fill { position: absolute; top: 6px; left: 0; height: 4px; background: var(--md-sys-color-primary); border-radius: 2px; }
+  .thumb {
+    position: absolute; top: -6px; width: 4px; height: 28px;
+    background: var(--md-sys-color-primary); border-radius: 2px;
+    transform: translateX(-2px);
+  }
+  .stop { position: absolute; top: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--md-sys-color-on-primary); transform: translateX(-2px); }
+  .stop.off { background: var(--md-sys-color-on-surface-variant); opacity: 0.6; }
+  .label { font: 500 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); width: 28px; text-align: right; }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Continuous</span>
+    <div class="track">
+      <div class="rail"></div>
+      <div class="fill" style="width:62%;"></div>
+      <div class="thumb" style="left:62%;"></div>
+    </div>
+    <span class="label">62</span>
+  </div>
+  <div class="row"><span class="lbl">Discrete</span>
+    <div class="track">
+      <div class="rail"></div>
+      <div class="fill" style="width:40%;"></div>
+      <div class="stop" style="left:0%;"></div>
+      <div class="stop" style="left:20%;"></div>
+      <div class="stop" style="left:40%;"></div>
+      <div class="stop off" style="left:60%;"></div>
+      <div class="stop off" style="left:80%;"></div>
+      <div class="stop off" style="left:100%;"></div>
+      <div class="thumb" style="left:40%;"></div>
+    </div>
+    <span class="label">2</span>
+  </div>
+  <div class="row"><span class="lbl">Range</span>
+    <div class="track">
+      <div class="rail"></div>
+      <div class="fill" style="left:25%;width:55%;"></div>
+      <div class="thumb" style="left:25%;"></div>
+      <div class="thumb" style="left:80%;"></div>
+    </div>
+    <span class="label">25–80</span>
+  </div>
+</body>
+</html>

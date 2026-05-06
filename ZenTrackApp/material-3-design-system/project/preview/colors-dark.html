@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Colors — Dark</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; }
+  .scheme { background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); padding: 16px; border-radius: 12px; }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .swatch { border-radius: 8px; padding: 10px; min-height: 80px; display: flex; flex-direction: column; justify-content: space-between; }
+  .name { font: 500 11px/1.1 var(--md-ref-typeface-plain); text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.9; }
+  .hex { font: 500 12px/1.1 var(--md-ref-typeface-mono); }
+  .label { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.6; margin-bottom: 8px; }
+</style>
+</head>
+<body data-theme="dark">
+  <div class="scheme">
+    <div class="label">Dark scheme — accents</div>
+    <div class="row">
+      <div class="swatch" style="background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);"><div class="name">Primary</div><div class="hex">#D0BCFF</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);"><div class="name">P. container</div><div class="hex">#4F378B</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-secondary); color: var(--md-sys-color-on-secondary);"><div class="name">Secondary</div><div class="hex">#CCC2DC</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-tertiary); color: var(--md-sys-color-on-tertiary);"><div class="name">Tertiary</div><div class="hex">#EFB8C8</div></div>
+    </div>
+    <div class="label" style="margin-top:12px">Dark scheme — surfaces</div>
+    <div class="row" style="grid-template-columns: repeat(5, 1fr); gap: 6px;">
+      <div class="swatch" style="background: var(--md-sys-color-surface-container-lowest); color: var(--md-sys-color-on-surface);"><div class="name">Lowest</div><div class="hex">#0F0D13</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface);"><div class="name">Low</div><div class="hex">#1D1B20</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface);"><div class="name">Container</div><div class="hex">#211F26</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface);"><div class="name">High</div><div class="hex">#2B2930</div></div>
+      <div class="swatch" style="background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface);"><div class="name">Highest</div><div class="hex">#36343B</div></div>
+    </div>
+  </div>
+</body>
+</html>

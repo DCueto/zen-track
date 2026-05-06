@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shape Scale</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .box { width: 88px; height: 64px; background: var(--md-sys-color-primary-container); border: 1px solid var(--md-sys-color-outline-variant); }
+  .name { font: 500 11px/1.2 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+  .val { font: 500 12px/1.1 var(--md-ref-typeface-mono); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-none);"></div><div class="name">None</div><div class="val">0</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-extra-small);"></div><div class="name">XS</div><div class="val">4dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-small);"></div><div class="name">Small</div><div class="val">8dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-medium);"></div><div class="name">Medium</div><div class="val">12dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-large);"></div><div class="name">Large</div><div class="val">16dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-large-increased);"></div><div class="name">L+</div><div class="val">20dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-extra-large);"></div><div class="name">XL</div><div class="val">28dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-extra-large-increased);"></div><div class="name">XL+</div><div class="val">32dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-extra-extra-large);"></div><div class="name">XXL</div><div class="val">48dp</div></div>
+    <div class="cell"><div class="box" style="border-radius: var(--md-sys-shape-corner-full);"></div><div class="name">Full</div><div class="val">9999</div></div>
+  </div>
+</body>
+</html>

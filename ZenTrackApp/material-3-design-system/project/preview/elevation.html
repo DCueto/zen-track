@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Elevation</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 28px 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .box { width: 88px; height: 60px; border-radius: 12px; background: var(--md-sys-color-surface-container-low); display: flex; align-items: center; justify-content: center; font: 500 14px/1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface); }
+  .name { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="cell"><div class="box">0</div><div class="name">Level 0 · 0dp</div></div>
+    <div class="cell"><div class="box" style="box-shadow: var(--md-sys-elevation-level1)">1</div><div class="name">Level 1 · 1dp</div></div>
+    <div class="cell"><div class="box" style="box-shadow: var(--md-sys-elevation-level2)">2</div><div class="name">Level 2 · 3dp</div></div>
+    <div class="cell"><div class="box" style="box-shadow: var(--md-sys-elevation-level3)">3</div><div class="name">Level 3 · 6dp</div></div>
+    <div class="cell"><div class="box" style="box-shadow: var(--md-sys-elevation-level4)">4</div><div class="name">Level 4 · 8dp</div></div>
+    <div class="cell"><div class="box" style="box-shadow: var(--md-sys-elevation-level5)">5</div><div class="name">Level 5 · 12dp</div></div>
+  </div>
+</body>
+</html>

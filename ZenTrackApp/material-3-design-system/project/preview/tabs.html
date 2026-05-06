@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tabs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    width: 600px; max-width: 100%;
+  }
+  .tab {
+    flex: 1; height: 48px; border: none; cursor: pointer; background: transparent;
+    color: var(--md-sys-color-on-surface-variant);
+    font: 500 14px/1 var(--md-ref-typeface-plain);
+    position: relative;
+  }
+  .tab.on { color: var(--md-sys-color-primary); }
+  .tab.on::after {
+    content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 3px;
+    background: var(--md-sys-color-primary); border-radius: 3px 3px 0 0;
+  }
+  .secondary .tab.on::after { left: 0; right: 0; height: 2px; }
+  .with-icon { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 64px; }
+  .lbl { width: 96px; }
+</style>
+</head>
+<body>
+  <div class="row" style="align-items:flex-start;"><span class="lbl" style="margin-top:14px;">Primary</span>
+    <div class="tabs">
+      <button class="tab with-icon on"><span class="material-symbols-outlined">videocam</span>Video</button>
+      <button class="tab with-icon"><span class="material-symbols-outlined">photo_library</span>Photos</button>
+      <button class="tab with-icon"><span class="material-symbols-outlined">audiotrack</span>Audio</button>
+    </div>
+  </div>
+  <div class="row" style="align-items:flex-start;margin-top:16px;"><span class="lbl" style="margin-top:14px;">Secondary</span>
+    <div class="tabs secondary">
+      <button class="tab on">Overview</button>
+      <button class="tab">Specs</button>
+      <button class="tab">Reviews</button>
+      <button class="tab">Related</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type — Title + Body + Label</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .row { display: grid; grid-template-columns: 84px 1fr 180px; align-items: baseline; column-gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+  .row:last-child { border: 0; }
+  .meta { font: 400 11px/1.1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface-variant); white-space: nowrap; }
+  .lbl  { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.05em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+</style>
+</head>
+<body>
+  <div class="row"><div class="lbl">Title L</div><div class="md-title-large">Card title example</div><div class="meta">22/28 · 400</div></div>
+  <div class="row"><div class="lbl">Title M</div><div class="md-title-medium">Card title example</div><div class="meta">16/24 · 500</div></div>
+  <div class="row"><div class="lbl">Title S</div><div class="md-title-small">Card title example</div><div class="meta">14/20 · 500</div></div>
+  <div class="row"><div class="lbl">Body L</div><div class="md-body-large">The quick brown fox jumps over the lazy dog.</div><div class="meta">16/24 · 400</div></div>
+  <div class="row"><div class="lbl">Body M</div><div style="font: 400 0.875rem/1.25rem var(--md-ref-typeface-plain); letter-spacing: 0.015625rem;">The quick brown fox jumps over the lazy dog.</div><div class="meta">14/20 · 400</div></div>
+  <div class="row"><div class="lbl">Body S</div><div class="md-body-small">The quick brown fox jumps over the lazy dog.</div><div class="meta">12/16 · 400</div></div>
+  <div class="row"><div class="lbl">Label L</div><div class="md-label-large">BUTTON LABEL</div><div class="meta">14/20 · 500</div></div>
+  <div class="row"><div class="lbl">Label M</div><div class="md-label-medium">NAV LABEL</div><div class="meta">12/16 · 500</div></div>
+  <div class="row"><div class="lbl">Label S</div><div class="md-label-small">BADGE</div><div class="meta">11/16 · 500</div></div>
+</body>
+</html>

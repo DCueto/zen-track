@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toggle buttons</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .tb {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 40px; padding: 0 18px; border: 1px solid var(--md-sys-color-outline);
+    background: transparent; color: var(--md-sys-color-on-surface);
+    font-family: var(--md-ref-typeface-plain); font-weight: 500; font-size: 14px;
+    border-radius: var(--md-sys-shape-corner-full); cursor: pointer;
+    transition: all var(--md-sys-motion-duration-short3) var(--md-sys-motion-spring-default-effects);
+  }
+  .tb.on {
+    background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);
+    border-color: transparent;
+  }
+  .iconbtn {
+    width: 40px; height: 40px; border: 1px solid var(--md-sys-color-outline);
+    border-radius: var(--md-sys-shape-corner-full); cursor: pointer;
+    background: transparent; color: var(--md-sys-color-on-surface-variant);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .iconbtn.on { background: var(--md-sys-color-inverse-surface); color: var(--md-sys-color-inverse-on-surface); border-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Toggle</span>
+    <button class="tb on"><span class="material-symbols-outlined">check</span>Following</button>
+    <button class="tb">Follow</button>
+    <button class="tb on"><span class="material-symbols-outlined">favorite</span>Liked</button>
+    <button class="tb">Like</button>
+  </div>
+  <div class="row"><span class="lbl">Icon toggle</span>
+    <button class="iconbtn on"><span class="material-symbols-outlined">format_bold</span></button>
+    <button class="iconbtn"><span class="material-symbols-outlined">format_italic</span></button>
+    <button class="iconbtn"><span class="material-symbols-outlined">format_underlined</span></button>
+    <button class="iconbtn on"><span class="material-symbols-outlined">format_align_left</span></button>
+  </div>
+</body>
+</html>

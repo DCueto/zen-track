@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type — Display + Headline</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .row { display: grid; grid-template-columns: 84px 1fr 200px; align-items: baseline; column-gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+  .row:last-child { border: 0; }
+  .meta { font: 400 11px/1.1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface-variant); white-space: nowrap; }
+  .lbl  { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.05em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+  .specimen { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+  <div class="row"><div class="lbl">Display L</div><div class="specimen md-display-large">Material 3</div><div class="meta">57/64 · Roboto Flex 400</div></div>
+  <div class="row"><div class="lbl">Display M</div><div class="specimen" style="font: 400 2.8125rem/3.25rem var(--md-ref-typeface-brand)">Material 3</div><div class="meta">45/52 · 400</div></div>
+  <div class="row"><div class="lbl">Display S</div><div class="specimen" style="font: 400 2.25rem/2.75rem var(--md-ref-typeface-brand)">Material 3</div><div class="meta">36/44 · 400</div></div>
+  <div class="row"><div class="lbl">Headline L</div><div class="specimen md-headline-large">Personal, adaptive, expressive</div><div class="meta">32/40 · 400</div></div>
+  <div class="row"><div class="lbl">Headline M</div><div class="specimen md-headline-medium">Personal, adaptive, expressive</div><div class="meta">28/36 · 400</div></div>
+  <div class="row"><div class="lbl">Headline S</div><div class="specimen md-headline-small">Personal, adaptive, expressive</div><div class="meta">24/32 · 400</div></div>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>State Layers</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .demo { position: relative; height: 56px; border-radius: 9999px; background: var(--md-sys-color-primary);
+          color: var(--md-sys-color-on-primary); display: flex; align-items: center; justify-content: center;
+          font: 500 14px/1 var(--md-ref-typeface-plain); letter-spacing: 0.00625rem; overflow: hidden; }
+  .demo::after { content: ""; position: absolute; inset: 0; background: var(--md-sys-color-on-primary); }
+  .rest::after  { opacity: 0; }
+  .hover::after { opacity: 0.08; }
+  .focus::after { opacity: 0.10; }
+  .press::after { opacity: 0.12; }
+  .lbl { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); margin-top: 8px; text-align: center; }
+  .pct { font: 400 11px/1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface-variant); display: block; margin-top: 2px; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div><div class="demo rest">Rest</div><div class="lbl">Rest</div><div class="pct">0%</div></div>
+    <div><div class="demo hover">Hover</div><div class="lbl">Hover</div><div class="pct">8%</div></div>
+    <div><div class="demo focus">Focus</div><div class="lbl">Focus</div><div class="pct">10%</div></div>
+    <div><div class="demo press">Press</div><div class="lbl">Pressed</div><div class="pct">12%</div></div>
+  </div>
+</body>
+</html>

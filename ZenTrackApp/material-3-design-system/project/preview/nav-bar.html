@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Navigation bar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 16px 20px; }
+  .nav {
+    display: flex; width: 440px; height: 80px;
+    background: var(--md-sys-color-surface-container);
+    border-radius: 12px; overflow: hidden;
+  }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; cursor: pointer; position: relative;
+    font: 500 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant);
+  }
+  .tab .pill {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    height: 32px; padding: 0 16px; border-radius: 9999px;
+    transition: background var(--md-sys-motion-duration-short3);
+  }
+  .tab.on .pill { background: var(--md-sys-color-secondary-container); }
+  .tab.on { color: var(--md-sys-color-on-surface); }
+  .tab .material-symbols-outlined { font-size: 22px; }
+  .tab.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; color: var(--md-sys-color-on-secondary-container); }
+  .badge {
+    position: absolute; top: 10px; right: calc(50% - 22px);
+    min-width: 16px; height: 16px; padding: 0 4px;
+    background: var(--md-sys-color-error); color: var(--md-sys-color-on-error);
+    border-radius: 9999px; font: 500 10px/16px var(--md-ref-typeface-plain); text-align: center;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <div class="tab on">
+      <div class="pill"><span class="material-symbols-outlined">home</span></div>
+      <span>Home</span>
+    </div>
+    <div class="tab">
+      <div class="pill"><span class="material-symbols-outlined">search</span></div>
+      <span>Search</span>
+    </div>
+    <div class="tab">
+      <span class="badge">3</span>
+      <div class="pill"><span class="material-symbols-outlined">notifications</span></div>
+      <span>Alerts</span>
+    </div>
+    <div class="tab">
+      <div class="pill"><span class="material-symbols-outlined">person</span></div>
+      <span>Profile</span>
+    </div>
+  </div>
+</body>
+</html>

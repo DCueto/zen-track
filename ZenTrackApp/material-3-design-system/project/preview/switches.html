@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Switches & Selection Controls</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); font-family: var(--md-ref-typeface-plain); }
+  .row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .lbl { width: 96px; font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+
+  /* Switch */
+  .sw { width: 52px; height: 32px; border-radius: 9999px; position: relative; cursor: pointer; }
+  .sw .thumb { position: absolute; top: 50%; transform: translateY(-50%); border-radius: 9999px; transition: all var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard); }
+  .sw-off { background: var(--md-sys-color-surface-container-highest); border: 2px solid var(--md-sys-color-outline); }
+  .sw-off .thumb { width: 16px; height: 16px; left: 8px; background: var(--md-sys-color-outline); }
+  .sw-on  { background: var(--md-sys-color-primary); }
+  .sw-on .thumb  { width: 24px; height: 24px; left: 24px; background: var(--md-sys-color-on-primary); display: flex; align-items: center; justify-content: center; }
+  .sw-on .material-symbols-outlined { font-size: 16px; color: var(--md-sys-color-primary); }
+
+  /* Checkbox */
+  .cb { width: 18px; height: 18px; border-radius: 2px; display: inline-flex; align-items: center; justify-content: center; }
+  .cb-off { border: 2px solid var(--md-sys-color-on-surface-variant); }
+  .cb-on  { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+  .cb-on .material-symbols-outlined { font-size: 16px; }
+
+  /* Radio */
+  .rb { width: 20px; height: 20px; border-radius: 9999px; border: 2px solid var(--md-sys-color-on-surface-variant); display: inline-flex; align-items: center; justify-content: center; }
+  .rb-on { border-color: var(--md-sys-color-primary); }
+  .rb-on .dot { width: 10px; height: 10px; background: var(--md-sys-color-primary); border-radius: 9999px; }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Switch</span>
+    <div class="sw sw-off"><div class="thumb"></div></div>
+    <div class="sw sw-on"><div class="thumb"><span class="material-symbols-outlined">check</span></div></div>
+    <span style="font:400 14px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant);">Off / On</span>
+  </div>
+  <div class="row"><span class="lbl">Checkbox</span>
+    <div class="cb cb-off"></div>
+    <div class="cb cb-on"><span class="material-symbols-outlined">check</span></div>
+    <div class="cb cb-on"><span class="material-symbols-outlined">remove</span></div>
+    <span style="font:400 14px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant);">Unchecked / Checked / Indeterminate</span>
+  </div>
+  <div class="row"><span class="lbl">Radio</span>
+    <div class="rb"></div>
+    <div class="rb rb-on"><div class="dot"></div></div>
+    <span style="font:400 14px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant);">Unselected / Selected</span>
+  </div>
+</body>
+</html>

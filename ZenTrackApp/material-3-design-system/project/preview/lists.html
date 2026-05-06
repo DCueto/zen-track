@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lists</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 16px 20px; }
+  .list { width: 460px; max-width: 100%; }
+  .li {
+    display: flex; align-items: center; gap: 16px;
+    min-height: 56px; padding: 8px 16px; cursor: pointer;
+    color: var(--md-sys-color-on-surface);
+  }
+  .li:hover { background: var(--md-sys-color-surface-container); }
+  .li.three { min-height: 72px; }
+  .lead {
+    width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);
+    font: 500 14px/1 var(--md-ref-typeface-plain);
+  }
+  .body { flex: 1; min-width: 0; }
+  .head { font: 400 16px/1.5 var(--md-ref-typeface-plain); }
+  .sup { font: 400 14px/1.25 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); }
+  .trail { font: 400 12px/1 var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); }
+  .div { height: 1px; background: var(--md-sys-color-outline-variant); margin-left: 72px; }
+</style>
+</head>
+<body>
+  <div class="list">
+    <div class="li three">
+      <div class="lead">AS</div>
+      <div class="body"><div class="head">Alex Smith</div><div class="sup">Updated the brand guidelines doc</div></div>
+      <div class="trail">2m</div>
+    </div>
+    <div class="div"></div>
+    <div class="li three">
+      <div class="lead" style="background:var(--md-sys-color-tertiary-container);color:var(--md-sys-color-on-tertiary-container);">JL</div>
+      <div class="body"><div class="head">Jordan Lee</div><div class="sup">"Can you review the spec by Friday?"</div></div>
+      <div class="trail">14m</div>
+    </div>
+    <div class="div"></div>
+    <div class="li">
+      <span class="material-symbols-outlined" style="color:var(--md-sys-color-on-surface-variant);">folder</span>
+      <div class="body"><div class="head">Design system files</div></div>
+      <span class="material-symbols-outlined" style="color:var(--md-sys-color-on-surface-variant);">chevron_right</span>
+    </div>
+  </div>
+</body>
+</html>

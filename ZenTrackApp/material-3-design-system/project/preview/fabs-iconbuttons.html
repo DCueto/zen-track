@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FABs & Icon Buttons</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 24px 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .row { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; }
+  .lbl { width: 100px; font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+  .fab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer;
+         background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container);
+         box-shadow: var(--md-sys-elevation-level3); border-radius: 16px; }
+  .fab-sm { width: 40px; height: 40px; border-radius: 12px; }
+  .fab-md { width: 56px; height: 56px; border-radius: 16px; }
+  .fab-lg { width: 96px; height: 96px; border-radius: 28px; }
+  .fab-ext { height: 56px; padding: 0 20px; border-radius: 16px; font: 500 14px/1 var(--md-ref-typeface-plain); letter-spacing: 0.00625rem; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 9999px; border: none; cursor: pointer;
+              display: inline-flex; align-items: center; justify-content: center; }
+  .icon-standard { background: transparent; color: var(--md-sys-color-on-surface-variant); }
+  .icon-filled   { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+  .icon-tonal    { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+  .icon-outlined { background: transparent; color: var(--md-sys-color-on-surface-variant); border: 1px solid var(--md-sys-color-outline); }
+</style>
+</head>
+<body>
+  <div class="row">
+    <span class="lbl">FAB</span>
+    <button class="fab fab-sm"><span class="material-symbols-outlined">edit</span></button>
+    <button class="fab fab-md"><span class="material-symbols-outlined">edit</span></button>
+    <button class="fab fab-lg"><span class="material-symbols-outlined" style="font-size:36px">edit</span></button>
+    <button class="fab fab-ext"><span class="material-symbols-outlined">edit</span>Compose</button>
+  </div>
+  <div class="row">
+    <span class="lbl">Icon button</span>
+    <button class="icon-btn icon-standard"><span class="material-symbols-outlined">favorite</span></button>
+    <button class="icon-btn icon-filled"><span class="material-symbols-outlined">favorite</span></button>
+    <button class="icon-btn icon-tonal"><span class="material-symbols-outlined">favorite</span></button>
+    <button class="icon-btn icon-outlined"><span class="material-symbols-outlined">favorite</span></button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Banner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .banner {
+    display: flex; gap: 16px; align-items: flex-start;
+    width: 600px; max-width: 100%; padding: 16px;
+    background: var(--md-sys-color-surface-container-low);
+    border-bottom: 1px solid var(--md-sys-color-outline-variant);
+    color: var(--md-sys-color-on-surface);
+  }
+  .banner .material-symbols-outlined { color: var(--md-sys-color-primary); margin-top: 2px; }
+  .banner .body { flex: 1; font: 400 14px/1.4 var(--md-ref-typeface-plain); }
+  .banner .actions { display: flex; gap: 4px; align-self: flex-end; }
+  .banner button {
+    height: 40px; padding: 0 12px; border: none; cursor: pointer;
+    background: transparent; color: var(--md-sys-color-primary);
+    border-radius: var(--md-sys-shape-corner-full);
+    font: 500 14px/1 var(--md-ref-typeface-plain);
+  }
+  .err { background: var(--md-sys-color-error-container); border-bottom: none; border-radius: 12px; }
+  .err .material-symbols-outlined, .err button { color: var(--md-sys-color-on-error-container); }
+</style>
+</head>
+<body>
+  <div class="col" style="gap:14px;">
+    <div class="banner">
+      <span class="material-symbols-outlined">cloud_off</span>
+      <div class="body">You're offline. Some content may be unavailable until you reconnect.</div>
+      <div class="actions">
+        <button>Dismiss</button>
+        <button>Retry</button>
+      </div>
+    </div>
+    <div class="banner err">
+      <span class="material-symbols-outlined">error</span>
+      <div class="body">Storage almost full. Free up space to keep syncing.</div>
+      <div class="actions"><button>Manage</button></div>
+    </div>
+  </div>
+</body>
+</html>

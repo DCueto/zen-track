@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Radio buttons & segmented buttons</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .rl { display: flex; align-items: center; gap: 12px; cursor: pointer;
+        font: 400 16px/1.5 var(--md-ref-typeface-plain); }
+  .rb {
+    width: 20px; height: 20px; border-radius: 50%; flex: 0 0 20px;
+    border: 2px solid var(--md-sys-color-on-surface-variant);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rb.on { border-color: var(--md-sys-color-primary); }
+  .rb.on::after { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--md-sys-color-primary); }
+  .rb.disabled { border-color: var(--md-sys-color-on-surface); opacity: 0.38; }
+
+  .seg-group {
+    display: inline-flex;
+    border: 1px solid var(--md-sys-color-outline); border-radius: 9999px; overflow: hidden;
+  }
+  .seg {
+    height: 40px; padding: 0 20px; border: none; cursor: pointer;
+    background: transparent; color: var(--md-sys-color-on-surface);
+    font: 500 14px/1 var(--md-ref-typeface-plain); display: flex; align-items: center; gap: 8px;
+    border-right: 1px solid var(--md-sys-color-outline);
+  }
+  .seg:last-child { border-right: none; }
+  .seg.on { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+  .seg .material-symbols-outlined { font-size: 18px; }
+  .seg.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Radio</span>
+    <div class="radio-group">
+      <label class="rl"><div class="rb on"></div>Small</label>
+      <label class="rl"><div class="rb"></div>Medium</label>
+      <label class="rl"><div class="rb"></div>Large</label>
+      <label class="rl"><div class="rb disabled"></div>Unavailable</label>
+    </div>
+  </div>
+  <div class="row" style="margin-top:16px;"><span class="lbl">Segmented</span>
+    <div class="col" style="gap:10px;">
+      <div class="seg-group">
+        <button class="seg on"><span class="material-symbols-outlined">check</span>Day</button>
+        <button class="seg">Week</button>
+        <button class="seg">Month</button>
+      </div>
+      <div class="seg-group">
+        <button class="seg on"><span class="material-symbols-outlined">format_list_bulleted</span></button>
+        <button class="seg"><span class="material-symbols-outlined">grid_view</span></button>
+        <button class="seg"><span class="material-symbols-outlined">bar_chart</span></button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Top App Bar & Navigation Bar</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 16px; background: var(--md-sys-color-surface-dim); color: var(--md-sys-color-on-surface); }
+
+  /* Top app bar */
+  .appbar { height: 64px; padding: 0 4px 0 16px; display: flex; align-items: center; gap: 4px;
+            background: var(--md-sys-color-surface); border-radius: 8px 8px 0 0; }
+  .appbar .title { flex: 1; font: var(--md-sys-typescale-title-large-weight) var(--md-sys-typescale-title-large-size)/var(--md-sys-typescale-title-large-line-height) var(--md-sys-typescale-title-large-font); color: var(--md-sys-color-on-surface); }
+  .icon-btn { width: 48px; height: 48px; border-radius: 9999px; border: none; background: transparent;
+              color: var(--md-sys-color-on-surface-variant); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+
+  .body { background: var(--md-sys-color-surface); height: 64px; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+
+  /* Nav bar */
+  .navbar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--md-sys-color-surface-container);
+            border-radius: 0 0 8px 8px; padding: 12px 0 16px; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .tab .pill { width: 64px; height: 32px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; }
+  .tab .pill .material-symbols-outlined { font-size: 24px; color: var(--md-sys-color-on-surface-variant); }
+  .tab.active .pill { background: var(--md-sys-color-secondary-container); }
+  .tab.active .pill .material-symbols-outlined { color: var(--md-sys-color-on-secondary-container); font-variation-settings: 'FILL' 1; }
+  .tab .label { font: var(--md-sys-typescale-label-medium-weight) var(--md-sys-typescale-label-medium-size)/var(--md-sys-typescale-label-medium-line-height) var(--md-sys-typescale-label-medium-font); color: var(--md-sys-color-on-surface-variant); }
+  .tab.active .label { color: var(--md-sys-color-on-surface); }
+</style>
+</head>
+<body>
+  <div class="appbar">
+    <button class="icon-btn"><span class="material-symbols-outlined">menu</span></button>
+    <div class="title">Inbox</div>
+    <button class="icon-btn"><span class="material-symbols-outlined">search</span></button>
+    <button class="icon-btn"><span class="material-symbols-outlined">more_vert</span></button>
+  </div>
+  <div class="body"></div>
+  <div class="navbar">
+    <div class="tab active"><div class="pill"><span class="material-symbols-outlined">home</span></div><div class="label">Home</div></div>
+    <div class="tab"><div class="pill"><span class="material-symbols-outlined">explore</span></div><div class="label">Explore</div></div>
+    <div class="tab"><div class="pill"><span class="material-symbols-outlined">notifications</span></div><div class="label">Updates</div></div>
+    <div class="tab"><div class="pill"><span class="material-symbols-outlined">account_circle</span></div><div class="label">You</div></div>
+  </div>
+</body>
+</html>

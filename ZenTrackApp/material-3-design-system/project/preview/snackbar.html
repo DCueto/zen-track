@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snackbar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .sb {
+    display: inline-flex; align-items: center; gap: 16px;
+    background: var(--md-sys-color-inverse-surface); color: var(--md-sys-color-inverse-on-surface);
+    padding: 8px 8px 8px 16px; min-height: 48px;
+    border-radius: var(--md-sys-shape-corner-extra-small);
+    box-shadow: var(--md-sys-elevation-level3);
+    font: 400 14px/1.4 var(--md-ref-typeface-plain);
+    max-width: 560px;
+  }
+  .sb .msg { flex: 1; padding: 6px 0; }
+  .sb button {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--md-sys-color-inverse-primary);
+    font: 500 14px/1 var(--md-ref-typeface-plain);
+    padding: 8px 12px; border-radius: var(--md-sys-shape-corner-full);
+  }
+  .sb .close {
+    width: 36px; height: 36px; border-radius: 50%;
+    color: var(--md-sys-color-inverse-on-surface);
+    display: inline-flex; align-items: center; justify-content: center; padding: 0;
+  }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="sb"><span class="msg">Message archived</span><button>Undo</button></div>
+    <div class="sb"><span class="msg">Connection lost. Trying to reconnect…</span><button class="close"><span class="material-symbols-outlined">close</span></button></div>
+    <div class="sb"><span class="msg">Photo uploaded successfully</span><button>View</button><button class="close"><span class="material-symbols-outlined">close</span></button></div>
+  </div>
+</body>
+</html>

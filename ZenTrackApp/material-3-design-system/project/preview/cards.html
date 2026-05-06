@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cards</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card { border-radius: var(--md-sys-shape-corner-medium); padding: 16px; display: flex; flex-direction: column; gap: 6px; min-height: 120px; }
+  .card .ttl { font: var(--md-sys-typescale-title-medium-weight) var(--md-sys-typescale-title-medium-size)/var(--md-sys-typescale-title-medium-line-height) var(--md-sys-typescale-title-medium-font); }
+  .card .body { font: 400 0.875rem/1.25rem var(--md-ref-typeface-plain); color: var(--md-sys-color-on-surface-variant); }
+  .card .tag { font: 500 11px/1.1 var(--md-ref-typeface-plain); letter-spacing: 0.04em; text-transform: uppercase; color: var(--md-sys-color-on-surface-variant); }
+  .filled   { background: var(--md-sys-color-surface-container-highest); }
+  .elevated { background: var(--md-sys-color-surface-container-low); box-shadow: var(--md-sys-elevation-level1); }
+  .outlined { background: var(--md-sys-color-surface); border: 1px solid var(--md-sys-color-outline-variant); }
+</style>
+</head>
+<body>
+  <div class="grid">
+    <div class="card filled">
+      <div class="tag">Filled</div>
+      <div class="ttl">Surface highest</div>
+      <div class="body">Filled cards have the highest emphasis. Use for primary content.</div>
+    </div>
+    <div class="card elevated">
+      <div class="tag">Elevated</div>
+      <div class="ttl">Level 1 shadow</div>
+      <div class="body">Elevated cards float on surface-container-low with a soft shadow.</div>
+    </div>
+    <div class="card outlined">
+      <div class="tag">Outlined</div>
+      <div class="ttl">Outline variant</div>
+      <div class="body">Outlined cards use a 1dp border on surface — quietest of the three.</div>
+    </div>
+  </div>
+</body>
+</html>

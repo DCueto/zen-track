@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Motion</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); }
+  .row { display: grid; grid-template-columns: 160px 1fr 90px; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+  .row:last-child { border: 0; }
+  .name { font: 500 12px/1.1 var(--md-ref-typeface-plain); }
+  .meta { font: 400 11px/1.1 var(--md-ref-typeface-mono); color: var(--md-sys-color-on-surface-variant); }
+  .track { position: relative; height: 8px; background: var(--md-sys-color-surface-container-highest); border-radius: 9999px; overflow: hidden; }
+  .ball { position: absolute; top: -4px; width: 16px; height: 16px; border-radius: 9999px; background: var(--md-sys-color-primary); animation-iteration-count: infinite; }
+  .e1 .ball { animation: slide 2s var(--md-sys-motion-easing-emphasized) infinite; }
+  .e2 .ball { animation: slide 2s var(--md-sys-motion-easing-emphasized-decelerate) infinite; }
+  .e3 .ball { animation: slide 2s var(--md-sys-motion-easing-emphasized-accelerate) infinite; }
+  .e4 .ball { animation: slide 2s var(--md-sys-motion-easing-standard) infinite; }
+  @keyframes slide { 0%,10% { left: 0; } 50% { left: calc(100% - 16px); } 90%,100% { left: calc(100% - 16px); } }
+</style>
+</head>
+<body>
+  <div class="row e1"><div class="name">Emphasized</div><div class="track"><div class="ball"></div></div><div class="meta">500ms</div></div>
+  <div class="row e2"><div class="name">Emphasized · decel</div><div class="track"><div class="ball"></div></div><div class="meta">400ms · enter</div></div>
+  <div class="row e3"><div class="name">Emphasized · accel</div><div class="track"><div class="ball"></div></div><div class="meta">200ms · exit</div></div>
+  <div class="row e4"><div class="name">Standard</div><div class="track"><div class="ball"></div></div><div class="meta">300ms · utility</div></div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Navigation drawer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 16px 20px; }
+  .drawer {
+    width: 320px; background: var(--md-sys-color-surface-container-low);
+    border-radius: 0 16px 16px 0; overflow: hidden; min-height: 340px;
+    padding: 12px 0;
+  }
+  .headline {
+    padding: 12px 28px 16px;
+    font: 400 22px/1.4 var(--md-ref-typeface-brand);
+    color: var(--md-sys-color-on-surface);
+  }
+  .section-lbl {
+    padding: 4px 28px; margin-top: 4px;
+    font: 500 11px/1 var(--md-ref-typeface-plain); letter-spacing: .06em;
+    text-transform: uppercase; color: var(--md-sys-color-on-surface-variant);
+    margin-bottom: 4px;
+  }
+  .item {
+    display: flex; align-items: center; gap: 12px;
+    height: 56px; padding: 0 28px; cursor: pointer;
+    color: var(--md-sys-color-on-surface-variant);
+    font: 500 14px/1 var(--md-ref-typeface-plain);
+    border-radius: 0 9999px 9999px 0; margin-right: 12px;
+    transition: background 100ms;
+  }
+  .item.on {
+    background: var(--md-sys-color-secondary-container);
+    color: var(--md-sys-color-on-secondary-container);
+  }
+  .item .material-symbols-outlined { font-size: 22px; }
+  .item.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+  .trail { margin-left: auto; font: 400 12px/1 var(--md-ref-typeface-plain); }
+  .div { height: 1px; background: var(--md-sys-color-outline-variant); margin: 8px 28px; }
+</style>
+</head>
+<body>
+  <div class="drawer">
+    <div class="headline">Mail</div>
+    <div class="item on">
+      <span class="material-symbols-outlined">inbox</span>Inbox<span class="trail">24</span>
+    </div>
+    <div class="item"><span class="material-symbols-outlined">send</span>Sent</div>
+    <div class="item"><span class="material-symbols-outlined">drafts</span>Drafts<span class="trail">2</span></div>
+    <div class="div"></div>
+    <div class="section-lbl">Labels</div>
+    <div class="item"><span class="material-symbols-outlined">work</span>Work</div>
+    <div class="item"><span class="material-symbols-outlined">person</span>Personal</div>
+    <div class="item"><span class="material-symbols-outlined">star</span>Starred</div>
+  </div>
+</body>
+</html>

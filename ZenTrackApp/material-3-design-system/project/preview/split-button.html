@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Split button</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .split { display: inline-flex; gap: 2px; }
+  .split button {
+    height: 48px; border: none; cursor: pointer;
+    background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary);
+    font-family: var(--md-ref-typeface-plain); font-weight: 500; font-size: 14px;
+    transition: border-radius var(--md-sys-motion-duration-medium2) var(--md-sys-motion-spring-default-spatial);
+  }
+  .split .lead { padding: 0 22px 0 24px; border-top-left-radius: 24px; border-bottom-left-radius: 24px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+  .split .menu { width: 48px; display: inline-flex; align-items: center; justify-content: center; border-top-right-radius: 24px; border-bottom-right-radius: 24px; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+  .split.open .menu { border-radius: 24px; transform: rotate(180deg); }
+  .tonal .lead, .tonal .menu { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
+  .outlined .lead, .outlined .menu { background: transparent; color: var(--md-sys-color-primary); box-shadow: inset 0 0 0 1px var(--md-sys-color-outline); }
+</style>
+</head>
+<body>
+  <div class="row"><span class="lbl">Filled</span>
+    <div class="split">
+      <button class="lead">Save</button>
+      <button class="menu"><span class="material-symbols-outlined">expand_more</span></button>
+    </div>
+    <div class="split open">
+      <button class="lead">Save</button>
+      <button class="menu"><span class="material-symbols-outlined">expand_more</span></button>
+    </div>
+  </div>
+  <div class="row"><span class="lbl">Tonal</span>
+    <div class="split tonal">
+      <button class="lead">Share</button>
+      <button class="menu"><span class="material-symbols-outlined">expand_more</span></button>
+    </div>
+  </div>
+  <div class="row"><span class="lbl">Outlined</span>
+    <div class="split outlined">
+      <button class="lead">Export</button>
+      <button class="menu"><span class="material-symbols-outlined">expand_more</span></button>
+    </div>
+  </div>
+</body>
+</html>
