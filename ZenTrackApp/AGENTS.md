@@ -149,6 +149,32 @@ Consulta el `CLAUDE.md` de cada módulo para las convenciones detalladas de test
 - **Sprint**: transversal a proyectos; pertenece al workspace.
 - **Webhook Git**: `POST /api/webhooks/git` → parsea `branch_name` → busca tarea → cambia status a "In Progress".
 
+## Workflow de Aprendizaje (docs/learn/)
+
+El desarrollador viene de C# / ASP.NET Core / EF Core / Blazor y lleva ~2 meses con Kotlin. **No tiene experiencia previa con el ecosistema JVM** (Gradle, Maven Central, JDK, JARs, etc.).
+
+### Regla para agentes
+
+Al completar cualquier tarea de `TASKS.md`, **actualiza o crea el documento correspondiente** en `docs/learn/`:
+
+- Tecnología o patrón nuevo → crear/ampliar el doc de esa área.
+- El código de ejemplo debe ser el **código real de ZenTrack**, no ejemplos abstractos.
+- Cada concepto se explica con una **analogía directa a C# / .NET**.
+
+### Mapa de documentos existentes
+
+| Área | Documento | Estado |
+|------|-----------|--------|
+| JVM, JDK, Maven Central, JAR | `docs/learn/01-ecosistema-jvm.md` | Completo |
+| Gradle, version catalog, monorepo | `docs/learn/02-gradle.md` | Completo |
+| Ktor, plugins, routing | `docs/learn/03-ktor-vs-aspnet.md` | Completo |
+| Exposed ORM, HikariCP, transacciones | `docs/learn/04-exposed-vs-ef.md` | Completo |
+| JWT en Ktor | `docs/learn/05-jwt-en-ktor.md` | Completo |
+| KMP, expect/actual, targets | `docs/learn/06-kmp-overview.md` | Pendiente |
+| Jetpack Compose vs Blazor | `docs/learn/07-compose-vs-blazor.md` | Pendiente |
+
+El índice completo está en `docs/learn/README.md`.
+
 ## Archivos de Contexto por Módulo
 
 - `server/CLAUDE.md` — Reglas de Ktor, PostgreSQL, Clean Architecture, RLS.
@@ -159,3 +185,4 @@ Consulta el `CLAUDE.md` de cada módulo para las convenciones detalladas de test
 - `docs/SDD/SPEC.md` — Historias de usuario y criterios de aceptación MVP.
 - `docs/SDD/PLAN.md` — Arquitectura técnica, esquema BD y endpoints.
 - `docs/SDD/TASKS.md` — Backlog de tareas por fase.
+- `docs/learn/README.md` — Índice de guías de aprendizaje KMP/Kotlin desde .NET.
