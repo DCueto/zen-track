@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:17
     container_name: zentrack_postgres
     environment:
       POSTGRES_DB: zentrack_db

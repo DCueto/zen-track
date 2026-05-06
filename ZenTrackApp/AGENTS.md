@@ -10,7 +10,7 @@ ZenTrack es una plataforma minimalista de gestión de proyectos multi-tenant est
 |---|---|---|
 | Lenguaje | Kotlin | 2.3.0 |
 | Backend | Ktor (Netty) | 3.3.3 |
-| Base de datos | PostgreSQL + Exposed/Ktorm | 16 |
+| Base de datos | PostgreSQL + Exposed/Ktorm | 17 |
 | Infraestructura local | Docker + Docker Compose | — |
 | Core compartido | Kotlin Multiplatform (targets: jvm + androidTarget) | 2.3.0 |
 | UI Android | Jetpack Compose + Material 3 | — |
