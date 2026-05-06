@@ -36,7 +36,33 @@ webApp/src/  →  import type { Task } from './types/api'  (tipado estricto)
 
 **Regla operativa**: cuando se modifique un modelo en `shared/commonMain` o un endpoint en `server/`, regenerar los tipos del frontend ejecutando `openapi-typescript`. En CI, este paso precede al build de la web y requiere que el servidor esté corriendo o que la spec se exporte como fichero estático.
 
-## 2. Esquema de Base de Datos (PostgreSQL) y Relaciones
+## 2. Infraestructura Local (Docker)
+
+El entorno de desarrollo usa Docker Compose para levantar PostgreSQL sin dependencias de instalación local.
+
+### Archivo: `docker-compose.yml` (raíz del monorepo)
+
+| Servicio | Imagen | Puerto | Volumen |
+|---|---|---|---|
+| `postgres` | `postgres:16` | `5432:5432` | `zentrack_postgres_data` |
+
+**Credenciales de desarrollo** (solo local, nunca se commitean):
+
+| Variable | Valor |
+|---|---|
+| `POSTGRES_DB` | `zentrack_db` |
+| `POSTGRES_USER` | `zentrack` |
+| `POSTGRES_PASSWORD` | `zentrack_dev` |
+
+```bash
+docker compose up -d     # Levanta la BD en background
+docker compose down      # Para (datos persisten en volumen)
+docker compose down -v   # Reset completo del volumen
+```
+
+La aplicación lee la configuración de conexión desde `server/src/main/resources/application.conf` (excluido de git vía `.gitignore`).
+
+## 3. Esquema de Base de Datos (PostgreSQL) y Relaciones
 
 El modelo de datos garantiza el aislamiento lógico por Workspace y permite Sprints transversales.
 
@@ -69,7 +95,7 @@ El modelo de datos garantiza el aislamiento lógico por Workspace y permite Spri
 |**Task_Assignees**|`task_id` (PK/FK), `user_id` (PK/FK)|Relación N:M. **Regla:** `user_id` debe existir en `Project_Members` del proyecto de la tarea.|
 |**Task_Tags**|`task_id` (PK/FK), `tag_id` (PK/FK)|Relación N:M.|
 
-## 3. Estructura de Endpoints Extendida (API Ktor)
+## 4. Estructura de Endpoints Extendida (API Ktor)
 
 Todas las rutas (excepto login/registro) requieren cabecera `Authorization: Bearer <JWT>`.
 
@@ -129,7 +155,7 @@ Todas las rutas (excepto login/registro) requieren cabecera `Authorization: Bear
 - `POST /api/webhooks/git` -> Endpoint público (protegido por secret/token del proveedor) que recibe eventos _push/merge_. El backend buscará la tarea por el nombre de la rama en el payload y actualizará el `status_id`.
     
 
-## 4. Estructura de Directorios (Monorepo)
+## 5. Estructura de Directorios (Monorepo)
 
 Plaintext
 
@@ -165,7 +191,7 @@ zentrackapp/
     └── tsconfig.json         # TypeScript strict mode
 ```
 
-## 5. Integración con Git y Manejo de Concurrencia
+## 6. Integración con Git y Manejo de Concurrencia
 
 - **Concurrencia de IDs:** Para el incremento de `task_number` por proyecto, se utilizará una transacción con `SELECT ... FOR UPDATE` en la tabla `Projects` para garantizar atomicidad y evitar IDs duplicados bajo alta carga.
     

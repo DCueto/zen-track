@@ -103,3 +103,15 @@ server/src/test/kotlin/
 ```bash
 ./gradlew :server:test
 ```
+
+## Base de Datos Local (Docker)
+
+La BD de desarrollo corre en Docker. Antes de ejecutar el servidor o los tests de integración, levanta el contenedor desde la raíz del monorepo:
+
+```bash
+docker compose up -d          # arranca postgres:16 en puerto 5432
+docker compose down           # para (datos persisten)
+docker compose down -v        # reset completo del volumen
+```
+
+Las credenciales de desarrollo (`zentrack` / `zentrack_dev` / `zentrack_db`) se leen desde `server/src/main/resources/application.conf` — **nunca en código fuente ni en git**.

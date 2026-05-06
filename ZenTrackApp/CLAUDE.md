@@ -63,6 +63,11 @@ Antes de implementar cualquier tarea, lee los archivos relevantes de `.ai/`:
 ### Comandos de Verificación Rápida
 
 ```bash
+# Infraestructura local
+docker compose up -d                     # Levanta PostgreSQL (prerequisito del servidor)
+docker compose down -v                   # Reset completo del volumen de BD
+
+# Compilación y tests
 ./gradlew test                           # Valida todos los módulos antes de proponer cambios
 ./gradlew :server:buildFatJar            # Verifica compilación del backend
 ./gradlew :shared:jvmJar                 # Verifica compilación del módulo shared

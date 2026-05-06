@@ -51,29 +51,33 @@ zentrackapp/
 ### Requisitos Previos
 
 - JDK 17 o superior.
-    
+- Docker y Docker Compose (para la base de datos).
 - Android Studio (para el módulo `androidApp/`).
-    
-- Node.js (v18+) y npm/yarn (para la web).
-    
-- PostgreSQL ejecutándose en local (puerto 5432).
-    
+- Node.js (v18+) y npm (para la web).
 - IntelliJ IDEA (recomendado para Kotlin/KMP) y VSCode/Cursor (para React).
-    
 
-### 1. Base de Datos
+### 1. Base de Datos (Docker)
 
-Crea una base de datos local llamada `zentrack_db`. Las credenciales por defecto para desarrollo están en `backend/src/main/resources/application.conf`.
+Levanta PostgreSQL con Docker Compose desde la raíz del monorepo:
+
+```bash
+docker compose up -d
+```
+
+Esto arranca un contenedor `postgres:16` con:
+- **BD:** `zentrack_db`  
+- **Usuario:** `zentrack`  
+- **Puerto:** `5432`  
+- **Datos persistidos en:** volumen `zentrack_postgres_data`
+
+Para parar: `docker compose down` (los datos persisten). Reset completo: `docker compose down -v`.
 
 ### 2. Levantar el Backend (Ktor)
 
-Navega a la carpeta del backend y ejecuta la aplicación:
+Con la BD corriendo, ejecuta el servidor:
 
-Bash
-
-```
-cd backend
-./gradlew run
+```bash
+./gradlew :server:run -t
 ```
 
 _El servidor estará disponible en `http://localhost:8080`._

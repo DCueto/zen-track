@@ -10,7 +10,8 @@ ZenTrack es una plataforma minimalista de gestión de proyectos multi-tenant est
 |---|---|---|
 | Lenguaje | Kotlin | 2.3.0 |
 | Backend | Ktor (Netty) | 3.3.3 |
-| Base de datos | PostgreSQL + Exposed/Ktorm | — |
+| Base de datos | PostgreSQL + Exposed/Ktorm | 16 |
+| Infraestructura local | Docker + Docker Compose | — |
 | Core compartido | Kotlin Multiplatform (targets: jvm + androidTarget) | 2.3.0 |
 | UI Android | Jetpack Compose + Material 3 | — |
 | CLI | Kotlin/JVM + Clikt | — |
@@ -63,9 +64,21 @@ zentrackapp/
 cd webApp && npm run build                # Producción (vite build)
 ```
 
+### Infraestructura local (Docker)
+```bash
+docker compose up -d                      # Levanta PostgreSQL en background
+docker compose down                       # Para y elimina contenedores (datos persisten en volumen)
+docker compose down -v                    # Para y elimina contenedores + volumen (reset completo)
+docker compose logs -f postgres           # Ver logs de la BD en tiempo real
+```
+
 ### Ejecución en Desarrollo
 ```bash
-./gradlew :server:run -t                  # Backend con hot-reload
+# 1. Levantar BD primero:
+docker compose up -d
+
+# 2. Servidor con hot-reload:
+./gradlew :server:run -t
 
 # CLI (tras installDist):
 ./cli/build/install/cli/bin/cli --help
