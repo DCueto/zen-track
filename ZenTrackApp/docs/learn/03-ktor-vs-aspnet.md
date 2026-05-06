@@ -233,6 +233,48 @@ El patrón de extraer rutas a funciones de extensión sobre `Route` (`fun Route.
 
 ---
 
+## Extension functions — `fun Application.configureSerialization()`
+
+El prefijo `Application.` no es una clase anidada ni un namespace — es una **extension function** de Kotlin. Permite añadir métodos a una clase existente sin modificarla ni heredar de ella.
+
+El equivalente exacto en C# son los **métodos de extensión**:
+
+```csharp
+// C# — método de extensión (requiere clase estática wrapper)
+public static class ApplicationExtensions
+{
+    public static void ConfigureSerialization(this WebApplication app)
+    {
+        app.Services.AddControllers();
+        // "app" es el WebApplication — equivale a "this" en Kotlin
+    }
+}
+```
+
+```kotlin
+// Kotlin — extension function (sintaxis directa, sin clase wrapper)
+fun Application.configureSerialization() {
+    install(ContentNegotiation) { json() }
+    // "this" es la instancia de Application — implícito
+}
+```
+
+`Application` es una clase de Ktor (`io.ktor.server.application.Application`) que representa el servidor en ejecución. Contiene `environment` (config), `log` y la función `install()`. Ctrl+click en IntelliJ para ver su código fuente.
+
+El patrón completo: cuando arrancas el servidor con `embeddedServer(module = Application::module)`, Ktor crea la instancia de `Application` y la pasa como receiver a `module()`. Dentro de `module()` tienes `this` = el servidor, y desde ahí puedes llamar a las demás extension functions que configuran los plugins.
+
+```kotlin
+// Sin extension function — parámetro explícito
+fun configureModule(app: Application) {
+    app.install(ContentNegotiation) { ... }
+}
+
+// Con extension function — this implícito, más idiomático en Kotlin
+fun Application.module() {
+    install(ContentNegotiation) { ... }   // this.install(...) implícito
+}
+```
+
 ## KDoc — documentación al hacer hover
 
 El equivalente de los XML docs de C# es **KDoc**. Sintaxis casi idéntica:
