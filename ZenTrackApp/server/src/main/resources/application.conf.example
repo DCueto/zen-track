@@ -1,0 +1,14 @@
+ktor {
+    deployment {
+        port = 8080
+        host = "0.0.0.0"
+    }
+}
+
+database {
+    url = "jdbc:postgresql://localhost:5433/zentrack_db"
+    driver = "org.postgresql.Driver"
+    user = "your_user"
+    password = "your_password"
+    maxPoolSize = 10
+}

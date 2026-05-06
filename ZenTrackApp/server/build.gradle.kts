@@ -27,6 +27,10 @@ dependencies {
     implementation(libs.ktor.serverCallLogging)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.postgresql)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.javaTime)
+    implementation(libs.hikaricp)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }

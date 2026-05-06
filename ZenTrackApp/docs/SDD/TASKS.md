@@ -19,7 +19,7 @@
 - [x] **[Config Backend]** Añadir dependencias Ktor en `server/build.gradle.kts`: `ktor-server-content-negotiation`, `ktor-serialization-kotlinx-json`, `ktor-server-auth-jwt`, `ktor-server-status-pages`, `ktor-server-cors`, `ktor-server-call-logging`. Añadir `kotlinx-serialization-json` y el driver PostgreSQL.
 - [x] **[Config Backend]** Instalar plugins en `Application.module()`: `ContentNegotiation` (kotlinx.serialization JSON), `StatusPages` (manejo global de errores), `CORS` y `CallLogging`. Crear la estructura de carpetas `api/`, `core/`, `db/`, `integrations/`.
 - [x] **[Setup Docker]** Crear `docker-compose.yml` en la raíz con el servicio `postgres:16` (volumen nombrado `zentrack_postgres_data`, healthcheck con `pg_isready`). Prerequisito de la configuración de la conexión PostgreSQL.
-- [ ] **[Config Backend]** Configurar la conexión a PostgreSQL con Exposed/Ktorm + HikariCP (pool de conexiones). Externalizar credenciales a `application.conf` (excluido de git vía `.gitignore`).
+- [x] **[Config Backend]** Configurar la conexión a PostgreSQL con Exposed/Ktorm + HikariCP (pool de conexiones). Externalizar credenciales a `application.conf` (excluido de git vía `.gitignore`).
 - [ ] **[Config Backend]** Implementar el sistema base de Autenticación JWT: plugin `Authentication`, generación de tokens en login, validación en rutas protegidas, separación entre rutas públicas y autenticadas.
 
 ### Shared (KMP)

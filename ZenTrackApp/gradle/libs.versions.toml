@@ -15,6 +15,8 @@ kotlinx-serialization = "1.7.3"
 ktor = "3.3.3"
 logback = "1.5.24"
 postgresql = "42.7.4"
+exposed = "0.61.0"
+hikaricp = "6.3.0"
 navigation-compose = "2.8.5"
 
 [libraries]
@@ -52,6 +54,10 @@ ktor-serverCors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor
 ktor-serverCallLogging = { module = "io.ktor:ktor-server-call-logging-jvm", version.ref = "ktor" }
 ktor-serverTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-javaTime = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

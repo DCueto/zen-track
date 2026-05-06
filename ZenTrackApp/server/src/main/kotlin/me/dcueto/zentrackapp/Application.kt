@@ -8,6 +8,7 @@ import me.dcueto.zentrackapp.api.configureCors
 import me.dcueto.zentrackapp.api.configureRouting
 import me.dcueto.zentrackapp.api.configureSerialization
 import me.dcueto.zentrackapp.api.configureStatusPages
+import me.dcueto.zentrackapp.db.DatabaseFactory
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -19,5 +20,6 @@ fun Application.module() {
     configureStatusPages()
     configureCors()
     configureCallLogging()
+    DatabaseFactory.init(this)
     configureRouting()
 }
