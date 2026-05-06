@@ -40,6 +40,7 @@ Antes de implementar cualquier tarea, lee los archivos relevantes de `.ai/`:
 
 | Archivo | Cuándo leerlo |
 |---|---|
+| `DESIGN.md` | Antes de implementar cualquier UI — design system M3, paleta, componentes por concepto |
 | `.ai/PROJECT_CONTEXT.md` | Visión general del proyecto, arquitectura y decisiones técnicas |
 | `.ai/WORKFLOW_FEATURE_REQUEST.md` | Al implementar una nueva feature |
 | `.ai/WORKFLOW_BUG_FIX.md` | Al corregir un bug |
