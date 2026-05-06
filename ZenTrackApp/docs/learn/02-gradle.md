@@ -181,6 +181,63 @@ Cuando un `.csproj` tiene `<Project Sdk="Microsoft.NET.Sdk.Web">`, está usando 
 | `kotlin("multiplatform")` | (sin equivalente directo) | Compilación multi-target (Android, iOS, JVM, JS) |
 | `application` | (implícito en Web SDK) | Hace el módulo ejecutable con `./gradlew run` |
 
+### ¿Qué es `alias(libs.plugins.kotlinJvm)`?
+
+En el bloque `plugins {}` los plugins se aplican con `alias()`. Para entenderlo hay que trazar la cadena completa desde el `.toml`:
+
+**En `gradle/libs.versions.toml`:**
+
+```toml
+[versions]
+kotlin = "2.3.0"
+
+[plugins]
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+#             ↑ ID real del plugin              ↑ apunta a [versions].kotlin
+```
+
+**Gradle genera automáticamente** un objeto Kotlin llamado `libs` con propiedades typesafe. No lo escribes tú — existe en memoria durante el build:
+
+```
+libs.plugins.kotlinJvm  →  id="org.jetbrains.kotlin.jvm", version="2.3.0"
+libs.ktor.serverCore    →  "io.ktor:ktor-server-core-jvm:3.3.3"
+```
+
+**En `build.gradle.kts`:**
+
+```kotlin
+plugins {
+    alias(libs.plugins.kotlinJvm)        // usando el catálogo
+}
+// es exactamente igual a escribir:
+plugins {
+    id("org.jetbrains.kotlin.jvm") version "2.3.0"   // hardcodeado
+}
+```
+
+**¿Por qué `alias()` solo en `plugins {}` y no en `dependencies {}`?**
+
+El bloque `plugins {}` se evalúa antes que el resto del script, en un contexto restringido donde los accessors typesafe no están disponibles directamente. `alias()` es la función puente que resuelve esa limitación. En `dependencies {}` no existe esa restricción, por eso vas directo:
+
+```kotlin
+plugins {
+    alias(libs.plugins.kotlinJvm)        // plugins: necesita alias()
+}
+dependencies {
+    implementation(libs.ktor.serverCore) // dependencies: sin alias(), directo
+}
+```
+
+Descompuesto:
+```
+alias( libs  .  plugins  .  kotlinJvm )
+  │     │         │            │
+  │     │         │            └─ clave bajo [plugins] en el .toml
+  │     │         └─ accede a la sección [plugins] del catálogo
+  │     └─ el objeto generado por Gradle que representa el catálogo
+  └─ "aplica esta entrada del catálogo como plugin"
+```
+
 ---
 
 ## Referencia entre módulos del monorepo
