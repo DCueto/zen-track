@@ -69,11 +69,68 @@ En ZenTrack nunca usamos Apache Maven como build tool — solo Gradle. Pero Grad
 
 ---
 
+## ¿Son binarios .jar y .dll?
+
+Sí, pero **no son código máquina nativo** (como un `.exe` compilado para x86). Contienen un lenguaje intermedio que el runtime convierte a código nativo en tiempo de ejecución:
+
+```
+C#     → compilador Roslyn  → IL (Intermediate Language)  → .dll → CLR → código máquina
+Kotlin → compilador Kotlin  → JVM bytecode (.class files) → .jar → JVM → código máquina
+```
+
+Son binarios en el sentido de que no son texto legible, pero **necesitan su runtime** para ejecutarse. Ni un `.dll` ni un `.jar` corren solos en la CPU.
+
+La excepción: **GraalVM Native Image** (JVM) y **Native AOT** (.NET) sí compilan a código máquina directamente, eliminando la necesidad del runtime. Fuera del scope de ZenTrack.
+
+---
+
+## .dll vs NuGet package — una distinción importante
+
+Esta es la confusión más común al llegar a cualquier ecosistema de paquetes:
+
+| | `.dll` | NuGet package (`.nupkg`) |
+|---|---|---|
+| **Qué es** | El binario compilado | Un ZIP de distribución |
+| **Contiene** | IL bytecode ejecutable | Uno o varios `.dll` + metadatos |
+| **Lo usa** | El compilador y el runtime | NuGet CLI para descarga y extracción |
+| **Analogía postal** | El producto | La caja de envío |
+
+Un `.nupkg` por dentro es un ZIP con esta estructura:
+
+```
+Newtonsoft.Json.13.0.3.nupkg
+├── lib/
+│   ├── net8.0/
+│   │   └── Newtonsoft.Json.dll       ← el binario para .NET 8
+│   └── netstandard2.0/
+│       └── Newtonsoft.Json.dll       ← el mismo para .NET Standard
+└── Newtonsoft.Json.nuspec            ← metadatos: nombre, versión, dependencias
+```
+
+`dotnet restore` descarga el `.nupkg`, extrae el `.dll` correcto para tu target framework, y lo referencia. Tu código nunca usa el `.nupkg` directamente — usa el `.dll` que estaba dentro.
+
+---
+
 ## JAR vs DLL
 
-La unidad de distribución en el ecosistema JVM es el **JAR** (Java ARchive):
+En JVM el diseño es más simple: **el `.jar` es tanto el binario como el formato de distribución**. No hay un wrapper separado como `.nupkg`:
 
-- Un JAR es un ZIP con `.class` files y metadatos.
+```
+Maven artifact en Maven Central:
+├── exposed-core-0.61.0.jar          ← el binario (lo que usa tu código)
+├── exposed-core-0.61.0-sources.jar  ← opcional: código fuente
+└── exposed-core-0.61.0.pom          ← metadatos (como .nuspec): versión, dependencias
+```
+
+El `.pom` (Project Object Model) es XML con el nombre, versión y de qué otros JARs depende este. Gradle lo lee para resolver dependencias transitivas — igual que NuGet resuelve el árbol de dependencias leyendo los `.nuspec`.
+
+```
+.nupkg       ≈  artefacto Maven en Central  (formato de distribución)
+.dll         ≈  .jar                         (el binario real)
+.nuspec      ≈  .pom                         (metadatos y dependencias)
+```
+
+Un JAR es un ZIP con `.class` files (el bytecode compilado de cada clase Kotlin/Java).
 - Las dependencias que declaras en Gradle son JARs publicados en Maven Central.
 
 En .NET, `dotnet publish` recoge automáticamente tu código **y** todas las DLLs de dependencias en una carpeta lista para desplegar. En el ecosistema JVM hay dos variantes:
