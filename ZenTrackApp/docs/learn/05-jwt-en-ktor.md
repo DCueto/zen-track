@@ -1,0 +1,282 @@
+# 05 — JWT en Ktor
+
+> Autenticación JWT comparada con ASP.NET Core — lo que cambia, lo que es igual.
+
+---
+
+## JWT es JWT — el concepto no cambia
+
+Un JWT (JSON Web Token) funciona igual independientemente del framework:
+
+1. El cliente manda credenciales a `POST /api/auth/login`
+2. El servidor valida y devuelve un token firmado
+3. El cliente incluye el token en requests posteriores: `Authorization: Bearer <token>`
+4. El servidor valida la firma del token en cada request protegida
+
+Lo que cambia entre ASP.NET Core y Ktor es **la API de configuración**, no el concepto.
+
+---
+
+## La librería JWT — java-jwt vs Microsoft.AspNetCore.Authentication.JwtBearer
+
+### .NET
+
+```csharp
+// NuGet packages
+// Microsoft.AspNetCore.Authentication.JwtBearer
+// System.IdentityModel.Tokens.Jwt (si generas tokens manualmente)
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options => {
+        options.TokenValidationParameters = new TokenValidationParameters {
+            ValidateIssuer = true,
+            ValidIssuer = "zentrack",
+            ValidateAudience = true,
+            ValidAudience = "zentrack-users",
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret))
+        };
+    });
+```
+
+### Ktor + java-jwt
+
+`ktor-server-auth-jwt` usa internamente la librería **`com.auth0:java-jwt`** (la librería JWT más popular del ecosistema JVM, equivalente a `System.IdentityModel.Tokens.Jwt`).
+
+```kotlin
+// Ktor — configureAuthentication() en Plugins.kt
+install(Authentication) {
+    jwt("jwt") {                        // "jwt" es el nombre del scheme
+        realm = "ZenTrack API"          // aparece en el header WWW-Authenticate
+        verifier(
+            JWT.require(Algorithm.HMAC256(secret))
+                .withAudience(audience)
+                .withIssuer(issuer)
+                .build()
+        )
+        validate { credential ->
+            // credential.payload contiene los claims del token
+            if (credential.payload.getClaim("userId").asString() != null) {
+                JWTPrincipal(credential.payload)  // token válido
+            } else null                            // token inválido → 401
+        }
+        challenge { _, _ ->
+            // respuesta cuando el token es inválido o falta
+            call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Token inválido o expirado"))
+        }
+    }
+}
+```
+
+---
+
+## JwtService — Generación de tokens
+
+### .NET (JwtSecurityTokenHandler)
+
+```csharp
+public class JwtService
+{
+    private readonly string _secret;
+    private readonly string _issuer;
+    private readonly string _audience;
+
+    public string GenerateToken(string userId)
+    {
+        var claims = new[] { new Claim("userId", userId) };
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _issuer,
+            audience: _audience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(1),
+            signingCredentials: credentials
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
+```
+
+### Kotlin (com.auth0:java-jwt)
+
+```kotlin
+// core/JwtService.kt
+class JwtService(
+    private val secret: String,
+    private val issuer: String,
+    private val audience: String,
+    private val expirationMs: Long = 86_400_000L  // 24h en milisegundos
+) {
+    fun generateToken(userId: String): String =
+        JWT.create()
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .withClaim("userId", userId)
+            .withExpiresAt(Date(System.currentTimeMillis() + expirationMs))
+            .sign(Algorithm.HMAC256(secret))
+}
+```
+
+La API de `com.auth0:java-jwt` es un **builder fluido** muy parecido al de `JwtSecurityToken`. El resultado es idéntico: un string JWT firmado.
+
+---
+
+## Proteger rutas — `[Authorize]` vs `authenticate("jwt")`
+
+### ASP.NET Core
+
+```csharp
+// Atributo en Controller — protege todos los endpoints del controller
+[Authorize]
+[ApiController]
+[Route("api/[controller]")]
+public class WorkspacesController : ControllerBase { ... }
+
+// O en un endpoint específico (Minimal APIs)
+app.MapGet("/api/workspaces", [Authorize] async (AppDbContext ctx) => { ... });
+
+// Rutas públicas — sin atributo o con [AllowAnonymous]
+app.MapPost("/api/auth/login", async (...) => { ... });
+```
+
+### Ktor
+
+```kotlin
+// Routing.kt — separación explícita en el grafo de rutas
+fun Application.configureRouting(jwtService: JwtService) {
+    routing {
+        // Rutas PÚBLICAS — fuera del bloque authenticate
+        authRoutes(jwtService)          // POST /api/auth/login, /register
+
+        // Rutas PROTEGIDAS — dentro del bloque authenticate
+        authenticate("jwt") {
+            // workspaceRoutes()        // GET/POST /api/workspaces
+            // taskRoutes()             // GET/POST /api/tasks
+        }
+    }
+}
+```
+
+La diferencia de filosofía: en ASP.NET Core, las rutas son públicas por defecto y `[Authorize]` las protege. En Ktor, dentro del bloque `authenticate("jwt") { }` **todas** las rutas son protegidas — las públicas están fuera del bloque.
+
+Ambos enfoques son correctos; Ktor simplemente hace la separación más visual en la estructura del código.
+
+---
+
+## Leer el usuario autenticado
+
+### ASP.NET Core
+
+```csharp
+// En un Controller
+var userId = User.FindFirst("userId")?.Value;
+
+// En Minimal APIs
+app.MapGet("/api/me", (ClaimsPrincipal user) =>
+{
+    var userId = user.FindFirst("userId")?.Value;
+    return Results.Ok(new { userId });
+}).RequireAuthorization();
+```
+
+### Ktor
+
+```kotlin
+// En cualquier ruta dentro de authenticate("jwt") { }
+get("/api/me") {
+    val principal = call.principal<JWTPrincipal>()
+    val userId = principal?.payload?.getClaim("userId")?.asString()
+    call.respond(HttpStatusCode.OK, mapOf("userId" to userId))
+}
+```
+
+`JWTPrincipal` es el equivalente de `ClaimsPrincipal` en .NET. Contiene el payload del JWT con todos los claims que pusiste al generar el token.
+
+---
+
+## Configuración — application.conf
+
+```hocon
+# application.conf
+jwt {
+    secret = "dev-secret-change-in-production-min-32-chars!!"
+    issuer = "zentrack"
+    audience = "zentrack-users"
+    realm = "ZenTrack API"
+    expirationMs = 86400000
+}
+```
+
+```json
+// appsettings.json (.NET equivalente)
+{
+  "JwtSettings": {
+    "Secret": "dev-secret-change-in-production-min-32-chars!!",
+    "Issuer": "zentrack",
+    "Audience": "zentrack-users",
+    "ExpirationMinutes": 1440
+  }
+}
+```
+
+El `realm` es el valor que aparece en el header `WWW-Authenticate: Bearer realm="ZenTrack API"` cuando una request no incluye token. En .NET esto es configurado automáticamente por `JwtBearerDefaults`.
+
+---
+
+## Flujo completo en ZenTrack
+
+```
+Cliente                    Ktor Server
+   |                            |
+   |  POST /api/auth/login      |
+   |  { email, password }  ──►  |
+   |                            |  configureAuthentication() no actúa
+   |                            |  (ruta pública, fuera de authenticate)
+   |                            |  authRoutes() recibe la request
+   |                            |  JwtService.generateToken(userId = email)
+   |  { token: "eyJ..." }  ◄──  |
+   |                            |
+   |  GET /api/workspaces       |
+   |  Authorization: Bearer eyJ |
+   |  ───────────────────────►  |
+   |                            |  install(Authentication) { jwt("jwt") }
+   |                            |  verifica firma HMAC256
+   |                            |  valida audience, issuer, expiresAt
+   |                            |  validate { } extrae claim "userId"
+   |                            |  → JWTPrincipal (usuario autenticado)
+   |                            |  la ruta se ejecuta con el usuario
+   |  { workspaces: [...] }  ◄─ |
+```
+
+---
+
+## Estado actual en ZenTrack (Fase 1)
+
+La infraestructura JWT está completa:
+- `configureAuthentication()` valida tokens en todas las rutas protegidas
+- `JwtService.generateToken()` genera tokens HMAC256 con claim `userId`
+- `POST /api/auth/login` genera un token real (sin validar credenciales aún — Fase 2 añade la tabla `Users`)
+- `POST /api/auth/register` retorna 501 hasta que Fase 2 implemente el modelo de usuarios
+
+**Pendiente Fase 2**: El login actualmente genera un token para cualquier email sin verificar si el usuario existe en BD. Cuando se cree la tabla `Users`, el endpoint validará el `password_hash` contra el almacenado.
+
+---
+
+## Resumen: tabla de equivalencias
+
+| ASP.NET Core / .NET | Ktor / Kotlin | Notas |
+|---|---|---|
+| `Microsoft.AspNetCore.Authentication.JwtBearer` | `ktor-server-auth-jwt-jvm` | Paquete de autenticación JWT |
+| `System.IdentityModel.Tokens.Jwt` | `com.auth0:java-jwt` | Librería de generación/validación |
+| `AddAuthentication().AddJwtBearer(...)` | `install(Authentication) { jwt { } }` | Configurar validación |
+| `TokenValidationParameters` | `.withAudience().withIssuer()` en el verifier | Parámetros de validación |
+| `JwtSecurityTokenHandler.WriteToken()` | `JWT.create()...sign()` | Generar token |
+| `[Authorize]` | `authenticate("jwt") { }` | Proteger rutas |
+| `[AllowAnonymous]` | fuera del bloque `authenticate` | Rutas públicas |
+| `ClaimsPrincipal` | `JWTPrincipal` | Objeto del usuario autenticado |
+| `User.FindFirst("claim")` | `principal?.payload?.getClaim("claim")` | Leer un claim |
+| `IssuerSigningKey` (HMAC256) | `Algorithm.HMAC256(secret)` | Algoritmo de firma |
+| `options.Challenge` / `OnChallenge` | `challenge { }` block | Respuesta 401 personalizada |

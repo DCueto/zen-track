@@ -15,6 +15,25 @@ Mantener coherencia arquitectónica entre módulos escritos en distintos lenguaj
 3. **Sin abstracciones prematuras.** Tres líneas similares no justifican un helper; extrae solo cuando haya cuatro o más usos reales.
 4. **Sin manejo de errores especulativo.** Solo valida en las fronteras del sistema (input del usuario, respuestas de APIs externas, webhooks).
 
+### Workflow de Aprendizaje (docs/learn/)
+
+Después de completar cada tarea de `TASKS.md`, **actualiza o crea el documento relevante** en `docs/learn/`:
+
+- Si introduces una tecnología nueva (librería, plugin, patrón): crea o actualiza el doc correspondiente.
+- Si amplías funcionalidad existente: añade una sección al doc ya existente.
+- Los docs usan comparativas C# / .NET como referencia principal (el background del dev).
+- Los docs deben incluir el **código real de ZenTrack**, no ejemplos abstractos.
+
+| Área | Documento |
+|------|-----------|
+| Ecosistema JVM, Maven Central, JDK | `docs/learn/01-ecosistema-jvm.md` |
+| Gradle, version catalog, monorepo | `docs/learn/02-gradle.md` |
+| Ktor, plugins, routing | `docs/learn/03-ktor-vs-aspnet.md` |
+| Exposed ORM, HikariCP | `docs/learn/04-exposed-vs-ef.md` |
+| JWT en Ktor | `docs/learn/05-jwt-en-ktor.md` |
+| KMP, expect/actual | `docs/learn/06-kmp-overview.md` (pendiente) |
+| Jetpack Compose | `docs/learn/07-compose-vs-blazor.md` (pendiente) |
+
 ### Reglas de Dependencias
 
 - **SIEMPRE** declara versiones en `gradle/libs.versions.toml`. **PROHIBIDO** hardcodear versiones en cualquier `build.gradle.kts`.
