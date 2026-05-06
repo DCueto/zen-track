@@ -233,6 +233,27 @@ El patrón de extraer rutas a funciones de extensión sobre `Route` (`fun Route.
 
 ---
 
+## KDoc — documentación al hacer hover
+
+El equivalente de los XML docs de C# es **KDoc**. Sintaxis casi idéntica:
+
+```csharp
+// C# — XML docs (aparecen en IntelliJ/VS al hacer hover)
+/// <summary>Instala ContentNegotiation con System.Text.Json.</summary>
+public void ConfigureSerialization() { }
+```
+
+```kotlin
+// Kotlin — KDoc (aparece en IntelliJ al hacer hover)
+/**
+ * Instala ContentNegotiation con kotlinx.serialization JSON.
+ * ignoreUnknownKeys permite recibir payloads con campos extra sin error.
+ */
+fun Application.configureSerialization() { }
+```
+
+Las funciones `configure*()` de ZenTrack no tienen KDoc porque sus nombres ya dicen lo que hacen. Si al hacer hover no ves documentación, es porque son funciones propias sin comentarios — no un error de IntelliJ. Para las funciones de Ktor (`install`, `routing`, etc.) sí aparece su documentación porque JetBrains las documentó.
+
 ## Resumen: tabla de equivalencias
 
 | ASP.NET Core | Ktor | Notas |
