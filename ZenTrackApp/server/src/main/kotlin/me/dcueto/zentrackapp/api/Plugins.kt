@@ -1,8 +1,12 @@
 package me.dcueto.zentrackapp.api
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.plugins.calllogging.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
@@ -48,5 +52,33 @@ fun Application.configureCors() {
 fun Application.configureCallLogging() {
     install(CallLogging) {
         level = Level.INFO
+    }
+}
+
+fun Application.configureAuthentication() {
+    val cfg = environment.config
+    val secret = cfg.property("jwt.secret").getString()
+    val issuer = cfg.property("jwt.issuer").getString()
+    val audience = cfg.property("jwt.audience").getString()
+    val realm = cfg.property("jwt.realm").getString()
+
+    install(Authentication) {
+        jwt("jwt") {
+            this.realm = realm
+            verifier(
+                JWT.require(Algorithm.HMAC256(secret))
+                    .withAudience(audience)
+                    .withIssuer(issuer)
+                    .build()
+            )
+            validate { credential ->
+                if (credential.payload.getClaim("userId").asString() != null) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { _, _ ->
+                call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Token inválido o expirado"))
+            }
+        }
     }
 }

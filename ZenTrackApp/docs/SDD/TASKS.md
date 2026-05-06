@@ -20,7 +20,7 @@
 - [x] **[Config Backend]** Instalar plugins en `Application.module()`: `ContentNegotiation` (kotlinx.serialization JSON), `StatusPages` (manejo global de errores), `CORS` y `CallLogging`. Crear la estructura de carpetas `api/`, `core/`, `db/`, `integrations/`.
 - [x] **[Setup Docker]** Crear `docker-compose.yml` en la raíz con el servicio `postgres:16` (volumen nombrado `zentrack_postgres_data`, healthcheck con `pg_isready`). Prerequisito de la configuración de la conexión PostgreSQL.
 - [x] **[Config Backend]** Configurar la conexión a PostgreSQL con Exposed/Ktorm + HikariCP (pool de conexiones). Externalizar credenciales a `application.conf` (excluido de git vía `.gitignore`).
-- [ ] **[Config Backend]** Implementar el sistema base de Autenticación JWT: plugin `Authentication`, generación de tokens en login, validación en rutas protegidas, separación entre rutas públicas y autenticadas.
+- [x] **[Config Backend]** Implementar el sistema base de Autenticación JWT: plugin `Authentication`, generación de tokens en login, validación en rutas protegidas, separación entre rutas públicas y autenticadas.
 
 ### Shared (KMP)
 

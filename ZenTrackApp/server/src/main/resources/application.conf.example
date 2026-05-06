@@ -12,3 +12,11 @@ database {
     password = "your_password"
     maxPoolSize = 10
 }
+
+jwt {
+    secret = "your-secret-min-32-chars-change-in-production"
+    issuer = "zentrack"
+    audience = "zentrack-users"
+    realm = "ZenTrack API"
+    expirationMs = 86400000
+}
