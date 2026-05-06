@@ -71,16 +71,26 @@ En ZenTrack nunca usamos Apache Maven como build tool — solo Gradle. Pero Grad
 
 ## JAR vs DLL
 
-La unidad de distribución en el ecosistema JVM es el **JAR** (Java ARchive). Es el equivalente al **DLL** o **NuGet package** de .NET:
+La unidad de distribución en el ecosistema JVM es el **JAR** (Java ARchive):
 
 - Un JAR es un ZIP con `.class` files y metadatos.
 - Las dependencias que declaras en Gradle son JARs publicados en Maven Central.
-- El servidor de ZenTrack se empaqueta como un **Fat JAR** (todos los JARs de dependencias incluidos), equivalente a un `dotnet publish --self-contained`.
+
+En .NET, `dotnet publish` recoge automáticamente tu código **y** todas las DLLs de dependencias en una carpeta lista para desplegar. En el ecosistema JVM hay dos variantes:
+
+| Artefacto | Contiene | Para ejecutarlo | Analogía .NET |
+|-----------|----------|-----------------|---------------|
+| **JAR normal** | Solo tu código compilado | Necesita las deps en el classpath de la máquina | Una DLL suelta |
+| **Fat JAR** (uber JAR) | Tu código + **todas las dependencias** empaquetadas dentro | Solo necesita `java` instalado | `dotnet publish` (framework-dependent) |
+
+Un **Fat JAR** empaqueta Ktor, HikariCP, Exposed y todas las demás librerías dentro de un único `.jar`. Lo despliegas en cualquier servidor que tenga Java instalado y ejecutas:
 
 ```bash
-./gradlew :server:buildFatJar     # Produce server/build/libs/server-all.jar
+./gradlew :server:buildFatJar             # Produce server/build/libs/server-all.jar
 java -jar server/build/libs/server-all.jar  # Arranca el servidor
 ```
+
+Lo que el Fat JAR **no incluye** es la propia JVM — igual que `dotnet publish` sin `--self-contained` no incluye el runtime .NET. Si necesitas un binario completamente autocontenido (sin depender de Java instalado), existe **GraalVM Native Image**, pero eso está fuera del scope de ZenTrack.
 
 ---
 
