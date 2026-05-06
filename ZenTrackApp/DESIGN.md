@@ -356,12 +356,55 @@ Reglas del drawer:
 
 ## Referencias
 
-| Recurso | Dónde |
+### Bundle local (`material-3-design-system/`)
+
+| Recurso | Ruta |
 |---|---|
+| Índice del bundle | `material-3-design-system/README.md` |
 | Tokens completos (CSS custom properties) | `material-3-design-system/project/colors_and_type.css` |
 | Catálogo de componentes (Compose + web) | `material-3-design-system/project/references/component-catalog.md` |
 | Patrones de navegación | `material-3-design-system/project/references/navigation-patterns.md` |
 | Layout y responsive | `material-3-design-system/project/references/layout-and-responsive.md` |
 | Theming y color dinámico | `material-3-design-system/project/references/theming-and-dynamic-color.md` |
 | Skill M3 (reglas de implementación) | `material-3-design-system/project/SKILL.md` |
-| Material Theme Builder (generar paleta) | https://material-foundation.github.io/material-theme-builder/ |
+
+#### `preview/` — prototipos HTML interactivos por componente
+
+Cada archivo es una página independiente que renderiza el componente con los tokens CSS del bundle. Consúltalos para ver comportamiento visual exacto antes de implementar.
+
+| Archivo | Componente |
+|---|---|
+| `buttons.html`, `buttons-sizes.html`, `button-group.html`, `split-button.html` | Botones (todos los tamaños y variantes M3 Expressive) |
+| `cards.html` | Cards (filled, elevated, outlined) |
+| `chips.html` | Chips (assist, filter, input, suggestion) |
+| `textfields.html` | Text fields (outlined, filled) |
+| `nav-drawer.html`, `nav-rail.html`, `nav-bar.html` | Navegación (drawer, rail, bottom bar) |
+| `dialog.html`, `bottom-sheet.html`, `side-sheet.html` | Contenedores modales |
+| `fabs-iconbuttons.html`, `fab-menu.html` | FABs e icon buttons |
+| `colors-accent.html`, `colors-surface.html`, `colors-dark.html` | Paletas de color (light / dark) |
+| `type-display.html`, `type-body.html` | Escala tipográfica |
+| `elevation.html`, `shape-scale.html`, `spacing.html`, `state-layers.html`, `motion.html` | Fundamentos visuales |
+| `tabs.html`, `carousel.html`, `layouts.html` | Patrones de layout |
+| `snackbar.html`, `progress.html`, `loading-indicator.html`, `tooltip-badge.html`, `banner.html` | Comunicación y feedback |
+| `icon-browser.html` | Navegador completo de Material Symbols (3 500+ iconos) |
+| `toggle-buttons.html`, `radio-segmented.html`, `switches.html`, `slider.html`, `date-picker.html`, `time-picker.html`, `search.html` | Inputs y controles |
+| `floating-toolbar.html`, `appbar-nav.html`, `bottom-app-bar.html` | Barras y toolbars |
+| `menu.html`, `lists.html`, `dynamic-color.html`, `iconography.html` | Misc |
+
+#### `ui_kits/web/` — referencia JSX para la plataforma web
+
+| Archivo | Contenido |
+|---|---|
+| `Components.jsx` | Kit completo de componentes M3 en JSX (botones, chips, cards, nav, inputs) |
+| `Compose.jsx` | Aproximaciones web de patrones Compose (scaffold, state layers, motion) |
+| `Inbox.jsx` | Layout de bandeja / lista estilo Linear — referencia directa para la vista Backlog |
+| `Settings.jsx` | Layout de página de configuración con secciones colapsables |
+| `index.html` | Punto de entrada del kit; carga `colors_and_type.css` y las fuentes |
+
+> Los archivos JSX son prototipos de referencia, no código de producción. Extrae el patrón visual y adáptalo al stack del módulo `webApp` (MUI v5 + TypeScript + Zustand).
+
+### Recursos externos
+
+| Recurso | URL |
+|---|---|
+| Material Theme Builder (generar paleta desde seed) | https://material-foundation.github.io/material-theme-builder/ |
