@@ -4,19 +4,19 @@
 
 ### Limpieza de boilerplate de plantilla (prerrequisito de la Fase 1)
 
-- [ ] **[Cleanup Shared]** Eliminar `shared/Greeting.kt` y `shared/Constants.kt` (boilerplate del template KMP, sin valor para ZenTrack). El `SERVER_PORT` de `Constants.kt` se moverá a `server/application.conf`.
-- [ ] **[Cleanup Shared]** Reemplazar el contenido de `Platform.kt` / `Platform.jvm.kt` / `Platform.js.kt` — el patrón `expect/actual` es válido, pero la implementación actual solo devuelve un nombre de plataforma. Redefinir la interfaz con utilidades reales de ZenTrack (ej. generación de UUIDs nativos).
-- [ ] **[Cleanup Shared]** Eliminar `SharedCommonTest.kt` (test de demostración vacío).
-- [ ] **[Cleanup Backend]** Reemplazar la ruta `GET /` de demostración en `Application.kt` por la estructura de plugins y routing definitiva. Eliminar `ApplicationTest.kt` de demostración.
+- [x] **[Cleanup Shared]** Eliminar `shared/Greeting.kt` y `shared/Constants.kt` (boilerplate del template KMP, sin valor para ZenTrack). El `SERVER_PORT` de `Constants.kt` se moverá a `server/application.conf`.
+- [x] **[Cleanup Shared]** Reemplazar el contenido de `Platform.kt` / `Platform.jvm.kt` / `Platform.js.kt` — el patrón `expect/actual` es válido, pero la implementación actual solo devuelve un nombre de plataforma. Redefinir la interfaz con utilidades reales de ZenTrack (ej. generación de UUIDs nativos).
+- [x] **[Cleanup Shared]** Eliminar `SharedCommonTest.kt` (test de demostración vacío).
+- [x] **[Cleanup Backend]** Reemplazar la ruta `GET /` de demostración en `Application.kt` por la estructura de plugins y routing definitiva. Eliminar `ApplicationTest.kt` de demostración.
 - [ ] **[Cleanup Android]** Eliminar el módulo `composeApp/` del monorepo Gradle. Crear el módulo `androidApp/` con la estructura definida en `androidApp/CLAUDE.md`.
-- [ ] **[Cleanup Web]** Eliminar `webApp/src/components/Greeting/` y `webApp/src/components/JSLogo/` (demos). Actualizar `index.tsx` para montar la app ZenTrack.
+- [x] **[Cleanup Web]** Eliminar `webApp/src/components/Greeting/` y `webApp/src/components/JSLogo/` (demos). Actualizar `index.tsx` para montar la app ZenTrack.
 
 ---
 
 ### Backend (server/)
 
 - [x] **[Hecho]** Servidor Ktor con Netty en puerto 8080 operativo (`Application.kt` + `build.gradle.kts` configurados).
-- [ ] **[Config Backend]** Añadir dependencias Ktor en `server/build.gradle.kts`: `ktor-server-content-negotiation`, `ktor-serialization-kotlinx-json`, `ktor-server-auth-jwt`, `ktor-server-status-pages`, `ktor-server-cors`, `ktor-server-call-logging`. Añadir `kotlinx-serialization-json` y el driver PostgreSQL.
+- [x] **[Config Backend]** Añadir dependencias Ktor en `server/build.gradle.kts`: `ktor-server-content-negotiation`, `ktor-serialization-kotlinx-json`, `ktor-server-auth-jwt`, `ktor-server-status-pages`, `ktor-server-cors`, `ktor-server-call-logging`. Añadir `kotlinx-serialization-json` y el driver PostgreSQL.
 - [ ] **[Config Backend]** Instalar plugins en `Application.module()`: `ContentNegotiation` (kotlinx.serialization JSON), `StatusPages` (manejo global de errores), `CORS` y `CallLogging`. Crear la estructura de carpetas `api/`, `core/`, `db/`, `integrations/`.
 - [ ] **[Config Backend]** Configurar la conexión a PostgreSQL con Exposed/Ktorm + HikariCP (pool de conexiones). Externalizar credenciales a `application.conf` (excluido de git vía `.gitignore`).
 - [ ] **[Config Backend]** Implementar el sistema base de Autenticación JWT: plugin `Authentication`, generación de tokens en login, validación en rutas protegidas, separación entre rutas públicas y autenticadas.
