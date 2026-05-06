@@ -44,7 +44,7 @@ El entorno de desarrollo usa Docker Compose para levantar PostgreSQL sin depende
 
 | Servicio | Imagen | Puerto | Volumen |
 |---|---|---|---|
-| `postgres` | `postgres:16` | `5432:5432` | `zentrack_postgres_data` |
+| `postgres` | `postgres:16` | `5433:5432` | `zentrack_postgres_data` |
 
 **Credenciales de desarrollo** (solo local, nunca se commitean):
 

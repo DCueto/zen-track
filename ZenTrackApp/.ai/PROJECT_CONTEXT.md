@@ -50,12 +50,12 @@ Plataforma minimalista de gestión de proyectos multi-tenant con integración Gi
 La base de datos de desarrollo corre en Docker. El fichero `docker-compose.yml` en la raíz del monorepo define el servicio `postgres:16`:
 
 ```bash
-docker compose up -d    # levanta PostgreSQL (zentrack_db en puerto 5432)
+docker compose up -d    # levanta PostgreSQL (zentrack_db en puerto 5433)
 docker compose down     # para (datos persisten en volumen zentrack_postgres_data)
 docker compose down -v  # reset completo incluyendo volumen
 ```
 
-Credenciales de desarrollo: `user=zentrack`, `password=zentrack_dev`, `db=zentrack_db`. Nunca se commitean; se leen desde `server/src/main/resources/application.conf` (excluido de git).
+Credenciales de desarrollo: `user=zentrack`, `password=zentrack_dev`, `db=zentrack_db`, `port=5433`. Nunca se commitean; se leen desde `server/src/main/resources/application.conf` (excluido de git).
 
 ## Decisiones técnicas tomadas
 

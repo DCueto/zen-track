@@ -67,7 +67,7 @@ docker compose up -d
 Esto arranca un contenedor `postgres:16` con:
 - **BD:** `zentrack_db`  
 - **Usuario:** `zentrack`  
-- **Puerto:** `5432`  
+- **Puerto:** `5433` (para evitar conflicto con otras instancias locales de PostgreSQL)  
 - **Datos persistidos en:** volumen `zentrack_postgres_data`
 
 Para parar: `docker compose down` (los datos persisten). Reset completo: `docker compose down -v`.
