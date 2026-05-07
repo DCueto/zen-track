@@ -164,6 +164,159 @@ user.delete()
 
 ---
 
+## Relaciones entre tablas — cómo se definen y consumen
+
+En EF Core defines las relaciones con **navigation properties** en el modelo y las configuras en `OnModelCreating`. En Exposed DAO usas dos piezas: una columna `reference()` en la tabla (FK) y un delegado especial en la entidad (la navigation property).
+
+### Many-to-One: Task pertenece a Workspace
+
+El caso más común — una FK de N hacia 1.
+
+```csharp
+// EF Core
+public class Task
+{
+    public Guid WorkspaceId { get; set; }
+    public Workspace Workspace { get; set; }  // navigation property
+}
+public class Workspace
+{
+    public List<Task> Tasks { get; set; }     // navigation property inversa
+}
+// OnModelCreating:
+modelBuilder.Entity<Task>()
+    .HasOne(t => t.Workspace)
+    .WithMany(w => w.Tasks)
+    .HasForeignKey(t => t.WorkspaceId);
+```
+
+```kotlin
+// Exposed DAO
+
+// 1. En la tabla — declara la FK con reference() en lugar de uuid()
+object TasksTable : UUIDTable("tasks") {
+    val workspaceId = reference("workspace_id", WorkspacesTable)   // FK — NOT NULL
+    val sprintId    = optionalReference("sprint_id", SprintsTable) // FK nullable
+}
+
+// 2. En la entidad — los delegados de navegación
+class TaskEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<TaskEntity>(TasksTable)
+
+    var workspace by WorkspaceEntity referencedOn TasksTable.workspaceId         // Many-to-One (NOT NULL)
+    var sprint    by SprintEntity    optionalReferencedOn TasksTable.sprintId     // Many-to-One nullable
+}
+
+class WorkspaceEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<WorkspaceEntity>(WorkspacesTable)
+
+    val tasks by TaskEntity referrersOn TasksTable.workspaceId                   // One-to-Many (colección inversa)
+}
+```
+
+| EF Core | Exposed DAO | Cuándo usarlo |
+|---|---|---|
+| `HasOne(...).WithMany(...)` + nav property | `referencedOn` en la entidad hijo | FK obligatoria (NOT NULL) |
+| `HasOne(...).WithMany(...)` + nav property nullable | `optionalReferencedOn` en la entidad hijo | FK nullable |
+| Colección `List<Task> Tasks` | `referrersOn` en la entidad padre | Acceder a la colección desde el padre |
+
+La diferencia clave de sintaxis: en EF defines la relación **una sola vez** en `OnModelCreating`. En Exposed la defines **dos veces** — `reference()` en la tabla y el delegado en la entidad — pero cada pieza tiene una responsabilidad distinta (esquema vs navegación).
+
+---
+
+### Many-to-Many: Task tiene muchos Tags
+
+Para relaciones N:M necesitas una tabla intermedia, igual que en EF con `HasMany().WithMany()` o una entidad join explícita.
+
+```csharp
+// EF Core — Many-to-Many implícito (EF crea la tabla join automáticamente)
+public class Task   { public List<Tag> Tags { get; set; } }
+public class Tag    { public List<Task> Tasks { get; set; } }
+// OnModelCreating:
+modelBuilder.Entity<Task>().HasMany(t => t.Tags).WithMany(t => t.Tasks);
+```
+
+```kotlin
+// Exposed DAO — la tabla join siempre es explícita
+
+// 1. Tabla join (no extiende UUIDTable — no tiene PK propia, la PK es compuesta)
+object TaskTagsTable : Table("task_tags") {
+    val taskId = reference("task_id", TasksTable)
+    val tagId  = reference("tag_id",  TagsTable)
+    override val primaryKey = PrimaryKey(taskId, tagId)
+}
+
+// 2. En la entidad — delegado via
+class TaskEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<TaskEntity>(TasksTable)
+
+    var tags by TagEntity via TaskTagsTable   // Many-to-Many
+}
+
+class TagEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<TagEntity>(TagsTable)
+
+    var tasks by TaskEntity via TaskTagsTable  // Many-to-Many inversa
+}
+```
+
+Asignar y leer tags:
+
+```kotlin
+transaction {
+    // Leer
+    val task = TaskEntity.findById(taskId)!!
+    val tagNames = task.tags.map { it.name }
+
+    // Asignar (reemplaza la colección entera)
+    task.tags = SizedCollection(listOf(tag1, tag2))
+}
+```
+
+---
+
+### Cómo consumir relaciones — lazy vs eager
+
+Por defecto todas las relaciones son **lazy**: se cargan en el momento en que accedes a la propiedad, disparando una query adicional. El comportamiento es idéntico al de EF Core sin `.Include()`.
+
+```kotlin
+// LAZY — Exposed dispara una query adicional cuando accedes a .workspace
+val task = TaskEntity.findById(id)!!
+println(task.workspace.name)  // ← query extra aquí
+```
+
+Para evitar N+1, carga las relaciones que vayas a usar con **`.with()`**:
+
+```kotlin
+// EAGER — una sola query carga tasks y workspaces juntos
+TaskEntity
+    .find { TasksTable.workspaceId eq workspaceId }
+    .with(TaskEntity::workspace)               // carga workspace de cada task
+    .map { it.toTask() }
+
+// Varias relaciones a la vez
+TaskEntity
+    .find { TasksTable.projectId eq projectId }
+    .with(TaskEntity::workspace, TaskEntity::sprint, TaskEntity::tags)
+    .map { it.toTask() }
+```
+
+Equivalencia exacta con EF Core:
+
+```csharp
+// EF Core — Include
+ctx.Tasks
+    .Where(t => t.WorkspaceId == workspaceId)
+    .Include(t => t.Workspace)
+    .Include(t => t.Sprint)
+    .Include(t => t.Tags)
+    .ToList();
+```
+
+**Regla en ZenTrack:** si en `toTask()` (o `toDto()`) accedes a una propiedad de una relación, esa relación debe estar en `.with()` en la query que la llama.
+
+---
+
 ## N+1 queries — el mismo problema que EF sin `.Include()`
 
 En DAO API, las relaciones se cargan **lazy** por defecto. Si iteras una lista sin cargar la relación explícitamente, cada elemento dispara una query extra (N+1).
