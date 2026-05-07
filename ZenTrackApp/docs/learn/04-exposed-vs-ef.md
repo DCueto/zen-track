@@ -6,12 +6,10 @@
 
 ## ¿Qué es Exposed?
 
-**Exposed** es el ORM oficial de JetBrains para Kotlin. Permite trabajar con bases de datos relacionales de dos formas:
+**Exposed** es el ORM oficial de JetBrains para Kotlin. Tiene dos APIs:
 
-1. **DSL API** — Define tablas como objetos Kotlin y escribe queries con una DSL typesafe. Similar al Query Builder de EF Core.
-2. **DAO API** — Define entidades con clases que tienen métodos `save()`, `findById()`, etc. Más parecido a los `DbSet<T>` de EF Core.
-
-En ZenTrack usamos la **DSL API** porque da más control sobre las queries y es más explícita — importante en un sistema multi-tenant con políticas RLS en PostgreSQL.
+1. **DAO API** — Define entidades con clases y accede a la BD como objetos. Es el approach principal de ZenTrack porque se parece más a EF Core.
+2. **DSL API** — Escribe queries con una DSL typesafe similar a SQL. Solo se usa en ZenTrack cuando la DAO API no es suficiente: `SELECT FOR UPDATE`, queries de agregación, joins complejos.
 
 ---
 
@@ -39,7 +37,7 @@ object DatabaseFactory {
             driverClassName  = cfg.property("database.driver").getString()
             username         = cfg.property("database.user").getString()
             password         = cfg.property("database.password").getString()
-            maximumPoolSize  = 10  // máximo 10 conexiones simultáneas
+            maximumPoolSize  = 10
         }
         Database.connect(HikariDataSource(hikariConfig))
     }
@@ -54,12 +52,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 ---
 
-## Definir tablas — Table Objects vs DbContext
+## Definir entidades — DAO API vs EF Core
 
-### EF Core — Entidades y DbContext
+### EF Core
 
 ```csharp
-// Modelo
+// Entidad
 public class User
 {
     public Guid Id { get; set; }
@@ -72,7 +70,6 @@ public class User
 public class AppDbContext : DbContext
 {
     public DbSet<User> Users { get; set; }
-    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
@@ -80,113 +77,210 @@ public class AppDbContext : DbContext
 }
 ```
 
-### Exposed (DSL API) — Table Objects
+### Exposed DAO API
+
+En Exposed, la tabla y la entidad son dos clases separadas. La tabla describe el esquema; la entidad es el objeto con el que trabajas en el código.
 
 ```kotlin
-// En Exposed defines la tabla como un object singleton
-object Users : Table("users") {
-    val id            = uuid("id").autoGenerate()
-    val email         = varchar("email", 255).uniqueIndex()
-    val passwordHash  = varchar("password_hash", 255)
-    val createdAt     = datetime("created_at").defaultExpression(CurrentDateTime)
+// db/UsersTable.kt
 
-    override val primaryKey = PrimaryKey(id)
+// 1. La tabla — describe columnas y tipos (equivale a OnModelCreating + DbSet)
+object UsersTable : UUIDTable("users") {           // UUIDTable = PK de tipo UUID autoincremental
+    val email        = varchar("email", 255).uniqueIndex()
+    val passwordHash = varchar("password_hash", 255)
+    val createdAt    = timestamp("created_at").defaultExpression(CurrentTimestamp)
+}
+
+// 2. La entidad — el objeto con el que trabajas (equivale al POCO en EF)
+class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<UserEntity>(UsersTable)  // el "DbSet" — da acceso a find(), all(), etc.
+
+    var email        by UsersTable.email
+    var passwordHash by UsersTable.passwordHash
+    var createdAt    by UsersTable.createdAt
+
+    fun toUser() = User(                           // convierte a modelo de dominio (NUNCA devuelvas la entidad fuera del transaction)
+        id        = id.value.toString(),
+        email     = email,
+        createdAt = createdAt.toString()
+    )
 }
 ```
 
-La diferencia clave: en EF Core tienes una clase para el modelo (POCO) y otra para la configuración (DbContext). En Exposed DSL, la tabla es el punto central — las queries van directamente sobre ella.
+| EF Core | Exposed DAO | Notas |
+|---|---|---|
+| `public class User { }` (POCO) | `class UserEntity(...) : UUIDEntity(id)` | El objeto con el que trabajas |
+| `DbSet<User> Users` | `companion object : UUIDEntityClass<UserEntity>` | Punto de entrada para queries |
+| `DbContext` (configura la BD) | `object UsersTable : UUIDTable("users")` | Define el esquema de la tabla |
+| `modelBuilder.Entity<User>()` | Columnas declaradas en el `object` | Configuración de columnas |
 
 ---
 
-## Queries — LINQ vs Exposed DSL
-
-### EF Core (LINQ)
+## Queries — LINQ vs Exposed DAO
 
 ```csharp
-// SELECT
-var users = await ctx.Users
-    .Where(u => u.Email == email)
-    .FirstOrDefaultAsync();
+// EF Core — LINQ
+var user = await ctx.Users
+    .FirstOrDefaultAsync(u => u.Email == email);
+```
 
+```kotlin
+// Exposed DAO — dentro de transaction { }
+val user = UserEntity.find { UsersTable.email eq email }.firstOrNull()
+```
+
+### CRUD completo
+
+```csharp
 // INSERT
-var user = new User { Email = "test@example.com", PasswordHash = hash };
+var user = new User { Email = "a@b.com", PasswordHash = hash };
 ctx.Users.Add(user);
 await ctx.SaveChangesAsync();
 
 // UPDATE
 user.PasswordHash = newHash;
-await ctx.SaveChangesAsync();
+await ctx.SaveChangesAsync();  // EF detecta el cambio automáticamente (change tracker)
 
 // DELETE
 ctx.Users.Remove(user);
 await ctx.SaveChangesAsync();
 ```
 
-### Exposed DSL
-
 ```kotlin
-// SELECT — dentro de una transaction { }
-val user = Users.selectAll()
-    .where { Users.email eq email }
-    .firstOrNull()
-    ?.let { row ->
-        User(id = row[Users.id], email = row[Users.email])
-    }
-
-// INSERT
-Users.insert {
-    it[email] = "test@example.com"
-    it[passwordHash] = hash
+// INSERT — dentro de transaction { }
+val user = UserEntity.new {
+    email        = "a@b.com"
+    passwordHash = hash
 }
+// No hay SaveChanges() — se persiste al cerrar el transaction { }
 
-// UPDATE
-Users.update({ Users.id eq userId }) {
-    it[passwordHash] = newHash
-}
+// UPDATE — la entidad es mutable mientras estés en el transaction
+user.passwordHash = newHash
+// Se persiste automáticamente al cerrar el transaction (igual que el change tracker de EF)
 
 // DELETE
-Users.deleteWhere { Users.id eq userId }
+user.delete()
 ```
+
+---
+
+## N+1 queries — el mismo problema que EF sin `.Include()`
+
+En DAO API, las relaciones se cargan **lazy** por defecto. Si iteras una lista sin cargar la relación explícitamente, cada elemento dispara una query extra (N+1).
+
+```kotlin
+// MALO — N+1: una query por cada task para cargar el workspace
+TaskEntity.all().forEach { println(it.workspace.name) }
+
+// BIEN — eager load con with(): una sola query
+TaskEntity.all().with(TaskEntity::workspace).forEach { println(it.workspace.name) }
+```
+
+El equivalente exacto en EF Core:
+
+```csharp
+// MALO — N+1 sin Include
+ctx.Tasks.ToList().ForEach(t => Console.WriteLine(t.Workspace.Name));
+
+// BIEN — Include
+ctx.Tasks.Include(t => t.Workspace).ToList().ForEach(t => Console.WriteLine(t.Workspace.Name));
+```
+
+**Regla en ZenTrack:** siempre que accedas a una relación en un loop, usa `.with()`.
+
+---
+
+## Las entidades NO son thread-safe fuera de `transaction {}`
+
+Este es el gotcha más importante del DAO API. Las instancias de `Entity` **solo son válidas dentro del `transaction {}` donde fueron creadas**. Si las devuelves directamente desde un Repository, obtienes errores en runtime cuando se acceden fuera del contexto de transacción.
+
+```kotlin
+// MALO — la entidad escapa del transaction
+fun getUser(id: UUID): UserEntity = transaction { UserEntity.findById(id)!! }
+// → LazyInitializationException al acceder a campos fuera del transaction
+
+// BIEN — conviertes a data class dentro del transaction
+fun getUser(id: UUID): User = transaction { UserEntity.findById(id)!!.toUser() }
+```
+
+En EF Core esto no pasa porque los POCOs son clases normales sin dependencias del framework. En Exposed DAO, la entidad tiene un "hilo" a la transacción activa.
 
 ---
 
 ## Transacciones
 
-En EF Core, `SaveChangesAsync()` es implícitamente transaccional. En Exposed, **toda operación debe estar dentro de una `transaction { }`**:
+En EF Core, `SaveChangesAsync()` es implícitamente transaccional. En Exposed, **toda operación debe estar dentro de una `transaction {}`**:
 
 ```kotlin
-// Exposed — transacción explícita (blocking I/O)
+// Exposed — transacción bloqueante (síncrona)
 transaction {
-    Users.insert {
-        it[email] = "test@example.com"
-        it[passwordHash] = hash
+    UserEntity.new {
+        email        = "a@b.com"
+        passwordHash = hash
     }
 }
 
-// Para coroutines (suspending), usa suspendTransaction
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-
-suspend fun createUser(email: String, hash: String) {
+// Para coroutines (Ktor usa coroutines), usa newSuspendedTransaction
+suspend fun createUser(email: String, hash: String): User =
     newSuspendedTransaction {
-        Users.insert {
-            it[Users.email] = email
-            it[passwordHash] = hash
-        }
+        UserEntity.new {
+            this.email        = email
+            this.passwordHash = hash
+        }.toUser()
     }
+```
+
+El helper `dbQuery` encapsula esto para no repetirlo en cada Repository:
+
+```kotlin
+// Helper reutilizable en db/DatabaseFactory.kt o db/DbQuery.kt
+suspend fun <T> dbQuery(block: () -> T): T =
+    withContext(Dispatchers.IO) { transaction { block() } }
+
+// Uso en Repository
+suspend fun findById(id: UUID): User? = dbQuery {
+    UserEntity.findById(id)?.toUser()
 }
 ```
 
-Esto equivale a:
+---
 
-```csharp
-// EF Core — transacción explícita (raramente necesaria)
-using var tx = await ctx.Database.BeginTransactionAsync();
-try {
-    ctx.Users.Add(user);
-    await ctx.SaveChangesAsync();
-    await tx.CommitAsync();
-} catch {
-    await tx.RollbackAsync();
+## Cuándo usar DSL API (excepciones a la regla)
+
+Usa DSL API únicamente cuando DAO no sea suficiente:
+
+| Caso | Por qué necesita DSL |
+|---|---|
+| `SELECT ... FOR UPDATE` (task_number atómico) | DAO no expone `forUpdate()` |
+| Queries de agregación (`COUNT`, `SUM`, `GROUP BY`) | DAO no soporta agregaciones |
+| Joins complejos entre 3+ tablas | DAO genera SQL menos eficiente |
+| Bulk updates/deletes | DAO no tiene equivalente directo |
+
+Ejemplo del único caso en ZenTrack donde mezclas DAO + DSL (incremento atómico de `task_number`):
+
+```kotlin
+suspend fun create(command: CreateTaskCommand): Task = dbQuery {
+    // SELECT FOR UPDATE — necesita DSL: no hay equivalente en DAO API
+    val project = ProjectsTable
+        .select { ProjectsTable.id eq command.projectId }
+        .forUpdate()
+        .singleOrNull() ?: error("Project not found")
+
+    val nextNumber = project[ProjectsTable.lastTaskNumber] + 1
+
+    ProjectsTable.update({ ProjectsTable.id eq command.projectId }) {
+        it[ProjectsTable.lastTaskNumber] = nextNumber
+    }
+
+    // El resto de la creación sí usa DAO
+    TaskEntity.new {
+        projectId   = command.projectId
+        taskNumber  = nextNumber
+        displayId   = "${project[ProjectsTable.projectKey]}-$nextNumber"
+        title       = command.title
+        createdAt   = Instant.now()
+        updatedAt   = Instant.now()
+    }.toTask()
 }
 ```
 
@@ -204,7 +298,7 @@ V002__workspaces.sql
 V003__projects.sql
 ```
 
-El equivalente en .NET sería usar **Flyway** o **Liquibase** en lugar de EF Migrations — herramientas que aplican SQL scripts en orden y registran cuáles ya se ejecutaron.
+El equivalente en .NET sería usar **Flyway** o **Liquibase** en lugar de EF Migrations.
 
 > Por qué no usar EF-style migrations: Los scripts SQL son explícitos y deterministas. No hay "magia" que genera SQL incorrecto para esquemas complejos. En un sistema multi-tenant con RLS, necesitas control total sobre el DDL.
 
@@ -232,25 +326,27 @@ database {
 }
 ```
 
-El formato de la connection string JDBC (`jdbc:postgresql://host:port/database`) es diferente al formato de Npgsql de .NET, pero la información es la misma.
-
-El **driver** (`org.postgresql.Driver`) es el equivalente a tener instalado el paquete NuGet `Npgsql` — es el adaptador específico de PostgreSQL para la API JDBC de Java.
+El formato JDBC (`jdbc:postgresql://host:port/database`) es diferente al formato Npgsql, pero la información es la misma. El **driver** (`org.postgresql.Driver`) es el equivalente al NuGet `Npgsql`.
 
 ---
 
 ## Resumen: tabla de equivalencias
 
-| Entity Framework Core / .NET | Exposed / JVM | Notas |
+| Entity Framework Core / .NET | Exposed DAO / JVM | Notas |
 |---|---|---|
 | `DbContext` | `DatabaseFactory` (singleton) | Gestiona la conexión a BD |
 | Connection pool (integrado en EF) | HikariCP (explícito) | Pool de conexiones |
-| `DbSet<User>` | `object Users : Table(...)` | Definición de tabla |
-| POCO / Record | `ResultRow` + data class manual | Resultado de query |
-| LINQ `.Where().FirstOrDefault()` | `.selectAll().where { }.firstOrNull()` | Queries |
-| `SaveChangesAsync()` | `transaction { }` | Persistir cambios |
+| POCO / Record | `class UserEntity(...) : UUIDEntity(id)` | Objeto de entidad |
+| `DbSet<User>` | `companion object : UUIDEntityClass<UserEntity>` | Acceso a queries |
+| `DbContext.OnModelCreating` | `object UsersTable : UUIDTable(...)` | Definición del esquema |
+| `.Include(u => u.Workspace)` | `.with(UserEntity::workspace)` | Eager loading (evita N+1) |
+| `ctx.Users.Add(entity)` | `UserEntity.new { ... }` | INSERT |
+| `entity.Field = value; SaveChanges()` | `entity.field = value` (dentro de transaction) | UPDATE |
+| `ctx.Users.Remove(entity)` | `entity.delete()` | DELETE |
+| `.Where().FirstOrDefault()` | `.find { }.firstOrNull()` | SELECT con filtro |
+| `SaveChangesAsync()` | `transaction { }` / `newSuspendedTransaction { }` | Persistir cambios |
 | `BeginTransactionAsync()` | `newSuspendedTransaction { }` | Transacción explícita |
 | EF Migrations | Scripts SQL numerados (V001__.sql) | Evolución del esquema |
 | `dotnet ef database update` | Aplicar scripts manualmente / Flyway | Ejecutar migraciones |
 | `Npgsql` NuGet package | `org.postgresql:postgresql` JAR | Driver de PostgreSQL |
 | `appsettings.json` | `application.conf` (HOCON) | Configuración |
-| Connection string Npgsql format | `jdbc:postgresql://` format | Formato de URL de BD |

@@ -145,134 +145,152 @@ CREATE POLICY tasks_git_webhook_read ON tasks
 
 ---
 
-### Paso 2 — Tabla Exposed
+### Paso 2 — Tabla y Entidad Exposed (DAO API)
 
-Crea o modifica el objeto Exposed en `server/src/.../db/`:
+Crea dos clases en `server/src/.../db/`: la tabla (esquema) y la entidad (objeto con el que trabajas).
+Usa **DAO API** (`UUIDTable` + `UUIDEntity`). Solo usa DSL cuando DAO no sea suficiente (ver Paso 3).
 
 ```kotlin
 // db/TasksTable.kt
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.dao.UUIDEntity
+import org.jetbrains.exposed.dao.UUIDEntityClass
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-object TasksTable : Table("tasks") {
-    val id           = uuid("id").autoGenerate()
-    val projectId    = uuid("project_id").references(ProjectsTable.id)
-    val workspaceId  = uuid("workspace_id").references(WorkspacesTable.id)
-    val taskNumber   = integer("task_number")
-    val displayId    = text("display_id")
-    val title        = text("title")
-    val description  = text("description").nullable()
-    val statusId     = uuid("status_id").references(TaskStatusesTable.id)
-    val priority     = enumerationByName<TaskPriority>("priority", 10)
-    val sprintId     = uuid("sprint_id").references(SprintsTable.id).nullable()
-    val parentId     = uuid("parent_id").references(TasksTable.id).nullable()
+// 1. Tabla — describe el esquema (equivale a OnModelCreating en EF)
+object TasksTable : UUIDTable("tasks") {           // UUIDTable genera PK uuid automáticamente
+    val projectId     = uuid("project_id").references(ProjectsTable.id)
+    val workspaceId   = uuid("workspace_id").references(WorkspacesTable.id)
+    val taskNumber    = integer("task_number")
+    val displayId     = text("display_id")
+    val title         = text("title")
+    val description   = text("description").nullable()
+    val statusId      = uuid("status_id").references(TaskStatusesTable.id)
+    val priority      = enumerationByName<TaskPriority>("priority", 10)
+    val sprintId      = uuid("sprint_id").references(SprintsTable.id).nullable()
+    val parentId      = uuid("parent_id").references(TasksTable.id).nullable()
     val gitBranchName = text("git_branch_name").nullable()
-    val createdAt    = timestamp("created_at")
-    val updatedAt    = timestamp("updated_at")
+    val createdAt     = timestamp("created_at")
+    val updatedAt     = timestamp("updated_at")
+}
 
-    override val primaryKey = PrimaryKey(id)
+// 2. Entidad — el objeto con el que trabajas (equivale al POCO en EF)
+class TaskEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+    companion object : UUIDEntityClass<TaskEntity>(TasksTable)  // el "DbSet" — da find(), all(), etc.
+
+    var projectId     by TasksTable.projectId
+    var workspaceId   by TasksTable.workspaceId
+    var taskNumber    by TasksTable.taskNumber
+    var displayId     by TasksTable.displayId
+    var title         by TasksTable.title
+    var description   by TasksTable.description
+    var priority      by TasksTable.priority
+    var gitBranchName by TasksTable.gitBranchName
+    var createdAt     by TasksTable.createdAt
+    var updatedAt     by TasksTable.updatedAt
+
+    fun toTask() = Task(                           // SIEMPRE convierte a modelo de dominio dentro del transaction
+        id            = id.value.toString(),
+        projectId     = projectId.toString(),
+        taskNumber    = taskNumber,
+        displayId     = displayId,
+        title         = title,
+        description   = description,
+        priority      = priority,
+        gitBranchName = gitBranchName,
+        createdAt     = createdAt.toString(),
+        updatedAt     = updatedAt.toString()
+    )
 }
 ```
 
-**Reglas Exposed:**
+**Reglas Exposed DAO:**
+- Usa `UUIDTable` (no `Table` base) — gestiona la PK UUID automáticamente.
 - Usa `enumerationByName` para enums — guarda el nombre como texto, no ordinal.
-- Los campos `nullable()` deben tener valor `null` por defecto en el modelo de dominio.
-- No definas `autoGenerate()` si la BD ya lo hace con `DEFAULT gen_random_uuid()` — elige uno.
-- La tabla Exposed es solo un descriptor de esquema. **No** pongas consultas aquí.
+- El método `toTask()` siempre dentro de la entidad. **NUNCA** devuelvas `TaskEntity` fuera del `transaction {}`.
+- Las entidades solo son válidas dentro del `transaction {}` donde se crearon — si escapan, obtienes errores en runtime.
 
 ---
 
 ### Paso 3 — Repository (capa `db/`)
 
 El Repository accede a la BD y devuelve **modelos de dominio** (no DTOs HTTP).
-Trabaja exclusivamente con `org.jetbrains.exposed.sql.*`.
+Usa **DAO API** por defecto. Solo baja a DSL cuando DAO no sea suficiente (se documenta inline).
 
 ```kotlin
 // db/TaskRepository.kt
 class TaskRepository {
 
-    // CORRECTO: filtra por workspaceId — nunca un full table scan en tabla multi-tenant
+    // DAO: filtra por workspaceId — nunca un full table scan en tabla multi-tenant
     suspend fun findByWorkspace(workspaceId: UUID): List<Task> = dbQuery {
-        TasksTable
-            .select { TasksTable.workspaceId eq workspaceId }
+        TaskEntity
+            .find { TasksTable.workspaceId eq workspaceId }
+            .with(TaskEntity::status)          // eager load — evita N+1 si accedes a relaciones
             .map { it.toTask() }
     }
 
-    // CORRECTO: task_number con SELECT FOR UPDATE — única implementación válida
+    // DAO: findById — siempre filtra también por workspaceId (defensa en profundidad)
+    suspend fun findById(id: UUID, workspaceId: UUID): Task? = dbQuery {
+        TaskEntity.find {
+            (TasksTable.id eq id) and (TasksTable.workspaceId eq workspaceId)
+        }.firstOrNull()?.toTask()
+    }
+
+    // MEZCLA DAO + DSL: task_number con SELECT FOR UPDATE — DSL obligatorio aquí
+    // DAO no expone forUpdate(); este es el único caso donde se usa DSL en este repository.
     suspend fun create(command: CreateTaskCommand): Task = dbQuery {
-        transaction {
-            // 1. Obtener y bloquear la fila del Project para incremento atómico
-            val project = ProjectsTable
-                .select { ProjectsTable.id eq command.projectId }
-                .forUpdate()                          // ← SELECT FOR UPDATE
-                .singleOrNull() ?: error("Project ${command.projectId} not found")
+        // 1. SELECT FOR UPDATE con DSL — bloquea la fila para incremento atómico
+        val project = ProjectsTable
+            .select { ProjectsTable.id eq command.projectId }
+            .forUpdate()
+            .singleOrNull() ?: error("Project ${command.projectId} not found")
 
-            val nextNumber = project[ProjectsTable.lastTaskNumber] + 1
-            val projectKey = project[ProjectsTable.projectKey]
+        val nextNumber = project[ProjectsTable.lastTaskNumber] + 1
+        val projectKey = project[ProjectsTable.projectKey]
 
-            // 2. Incrementar el contador en Projects
-            ProjectsTable.update({ ProjectsTable.id eq command.projectId }) {
-                it[lastTaskNumber] = nextNumber
-            }
-
-            // 3. Insertar la tarea con el número bloqueado
-            val taskId = TasksTable.insertAndGetId {
-                it[projectId]    = command.projectId
-                it[workspaceId]  = command.workspaceId
-                it[taskNumber]   = nextNumber
-                it[displayId]    = "$projectKey-$nextNumber"  // inmutable desde aquí
-                it[title]        = command.title
-                it[description]  = command.description
-                it[statusId]     = command.statusId
-                it[priority]     = command.priority
-                it[sprintId]     = command.sprintId
-                it[createdAt]    = Instant.now()
-                it[updatedAt]    = Instant.now()
-            }
-
-            findById(taskId.value) ?: error("Insert failed")
+        // 2. Incrementar el contador (DSL — parte del mismo SELECT FOR UPDATE)
+        ProjectsTable.update({ ProjectsTable.id eq command.projectId }) {
+            it[ProjectsTable.lastTaskNumber] = nextNumber
         }
+
+        // 3. Insertar la tarea con DAO
+        TaskEntity.new {
+            projectId    = command.projectId
+            workspaceId  = command.workspaceId
+            taskNumber   = nextNumber
+            displayId    = "$projectKey-$nextNumber"  // inmutable desde aquí
+            title        = command.title
+            description  = command.description
+            statusId     = command.statusId
+            priority     = command.priority
+            sprintId     = command.sprintId
+            createdAt    = Instant.now()
+            updatedAt    = Instant.now()
+        }.toTask()
     }
 
-    // CORRECTO: siempre filtra por workspaceId además del id — defensa en profundidad
-    suspend fun findById(id: UUID, workspaceId: UUID? = null): Task? = dbQuery {
-        TasksTable
-            .select {
-                (TasksTable.id eq id).let { cond ->
-                    if (workspaceId != null) cond and (TasksTable.workspaceId eq workspaceId)
-                    else cond
-                }
-            }
-            .singleOrNull()
-            ?.toTask()
+    // DAO: update de un campo puntual — la entidad es mutable dentro del transaction
+    suspend fun updateBranchName(id: UUID, branchName: String): Task = dbQuery {
+        val entity = TaskEntity.findById(id) ?: error("Task $id not found")
+        entity.gitBranchName = branchName
+        entity.updatedAt     = Instant.now()
+        entity.toTask()
+        // No hay SaveChanges() — se persiste automáticamente al cerrar el transaction
     }
-
-    private fun ResultRow.toTask(): Task = Task(
-        id            = this[TasksTable.id].value.toString(),
-        projectId     = this[TasksTable.projectId].value.toString(),
-        taskNumber    = this[TasksTable.taskNumber],
-        displayId     = this[TasksTable.displayId],
-        title         = this[TasksTable.title],
-        description   = this[TasksTable.description],
-        statusId      = this[TasksTable.statusId].value.toString(),
-        priority      = this[TasksTable.priority],
-        sprintId      = this[TasksTable.sprintId]?.value?.toString(),
-        gitBranchName = this[TasksTable.gitBranchName],
-        createdAt     = this[TasksTable.createdAt].toString(),
-        updatedAt     = this[TasksTable.updatedAt].toString()
-    )
 }
 
-// Helper de coroutines para Exposed (adapta transacciones bloqueantes a suspending)
+// Helper de coroutines — adapta transacciones bloqueantes de Exposed a suspending
 suspend fun <T> dbQuery(block: () -> T): T =
     withContext(Dispatchers.IO) { transaction { block() } }
 ```
 
 **Reglas de Repository:**
-- Toda función es `suspend` — usa `dbQuery` o equivalente para salir del hilo principal.
-- **PROHIBIDO** devolver `ResultRow` fuera del Repository. Mapea siempre a modelo de dominio.
+- Toda función es `suspend` — siempre usa `dbQuery`.
+- **PROHIBIDO** devolver `TaskEntity` fuera del Repository. Llama siempre a `.toTask()` dentro del `dbQuery`.
 - **PROHIBIDO** consultas sin `WHERE` sobre tablas multi-tenant.
-- El mapeo a modelo de dominio (`toTask()`) vive como extensión privada dentro del Repository.
+- Usa DSL solo cuando DAO no sea suficiente (p.ej. `forUpdate()`, agregaciones). Documenta el motivo inline.
+- Las relaciones que se acceden en la respuesta deben cargarse con `.with(...)` para evitar N+1.
 
 ---
 
@@ -518,7 +536,7 @@ server/src/main/kotlin/me/dcueto/zentrackapp/
 │   └── commands/
 │       └── CreateTaskCommand.kt   → data class simple, sin anotaciones de framework
 ├── db/
-│   ├── TasksTable.kt              → object extends Table("tasks")
+│   ├── TasksTable.kt              → UUIDTable (esquema) + TaskEntity (DAO)
 │   ├── TaskRepository.kt          → solo Exposed; devuelve modelos de dominio
 │   └── migrations/
 │       ├── V001__init_users.sql

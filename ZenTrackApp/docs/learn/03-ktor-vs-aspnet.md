@@ -82,6 +82,57 @@ data class UserDto(val id: String, val email: String)
 record UserDto(string Id, string Email);
 ```
 
+### Por qué Kotlin exige `@Serializable` y C# no
+
+`kotlinx.serialization` usa un **plugin del compilador de Kotlin** que genera el código de serialización en tiempo de build — no usa reflection en runtime como `System.Text.Json`. Esto tiene consecuencias:
+
+| | C# `System.Text.Json` | Kotlin `kotlinx.serialization` |
+|---|---|---|
+| Cómo funciona | Reflection en runtime | Plugin del compilador (build time) |
+| Anotación necesaria | No | Sí, `@Serializable` |
+| Falla en | Runtime (JSON vacío o mal) | Tiempo de compilación |
+| Rendimiento | Más lento (reflection) | Más rápido (código generado) |
+
+Ventaja práctica: si olvidaste `@Serializable` en una clase que intentas serializar, el compilador te lo dice antes de ejecutar nada. En C# te enterarías en runtime con un JSON vacío o una excepción.
+
+### Para qué sirve en ZenTrack
+
+Hay dos escenarios donde necesitas `@Serializable`:
+
+**1. HTTP — el cuerpo de requests y responses**
+
+Cuando Ktor ejecuta `call.receive<LoginRequest>()` convierte el JSON que llega por la red a un objeto Kotlin (deserializar). Cuando ejecuta `call.respond(AuthResponse(token))` convierte el objeto a JSON para enviarlo (serializar). Sin `@Serializable` en esas clases, ambas operaciones fallan en compilación.
+
+```kotlin
+// En AuthRoutes.kt — estas clases necesitan @Serializable
+@Serializable data class LoginRequest(val email: String, val password: String)
+@Serializable data class AuthResponse(val token: String)
+
+post("/login") {
+    val request = call.receive<LoginRequest>()           // JSON → objeto  (deserializar)
+    call.respond(HttpStatusCode.OK, AuthResponse(token)) // objeto → JSON  (serializar)
+}
+```
+
+La analogía exacta en ASP.NET Core — el mecanismo es el mismo, solo cambia dónde declaras la intención:
+
+```csharp
+// C# — la intención se declara en el endpoint, no en la clase
+[HttpPost("login")]
+public IActionResult Login([FromBody] LoginRequest request)  // [FromBody] = deserializar
+{
+    return Ok(new AuthResponse(token));  // Ok() = serializar
+}
+```
+
+**2. Almacenamiento local (CLI — futuro)**
+
+Cuando el CLI guarde la configuración en `~/.config/zentrack/config.json` también necesitará `@Serializable` en la data class que represente ese fichero.
+
+### Qué genera el compilador
+
+Cuando pones `@Serializable`, el plugin genera automáticamente un `serializer()` para esa clase — equivalente a tener un `JsonConverter<T>` personalizado en C# pero sin escribirlo tú. No lo ves en el código, pero Ktor lo usa internamente cuando procesa las requests.
+
 ---
 
 ## StatusPages — El ExceptionHandler global
