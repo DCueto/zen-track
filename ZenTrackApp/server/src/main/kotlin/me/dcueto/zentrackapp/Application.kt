@@ -11,8 +11,10 @@ import me.dcueto.zentrackapp.api.configureSerialization
 import me.dcueto.zentrackapp.api.configureStatusPages
 import me.dcueto.zentrackapp.core.AuthService
 import me.dcueto.zentrackapp.core.JwtService
+import me.dcueto.zentrackapp.core.ProjectService
 import me.dcueto.zentrackapp.core.WorkspaceService
 import me.dcueto.zentrackapp.db.DatabaseFactory
+import me.dcueto.zentrackapp.db.repositories.ProjectRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.WorkspaceRepositoryImpl
 
@@ -41,6 +43,7 @@ fun Application.module() {
 
     val authService = AuthService(UserRepositoryImpl(), jwtService)
     val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
+    val projectService = ProjectService(ProjectRepositoryImpl())
 
-    configureRouting(authService, workspaceService)
+    configureRouting(authService, workspaceService, projectService)
 }
