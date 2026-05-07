@@ -110,18 +110,33 @@ Por eso en `shared/build.gradle.kts` declaramos:
 - `androidMain` → `ktor-client-okhttp` (motor OkHttp — librería HTTP estándar de Android)
 
 ```kotlin
-sourceSets {
-    commonMain.dependencies {
-        implementation(libs.ktor.clientCore)               // API genérica
-        implementation(libs.ktor.clientContentNegotiation) // plugin JSON
-        implementation(libs.ktor.serializationJson)        // kotlinx.serialization
-        implementation(libs.koin.core)                     // DI
+kotlin {
+    jvm()
+
+    // android {} = target Android + configuración Android (AGP 9.0+).
+    // Reemplaza tanto androidTarget {} como el bloque android {} de primer nivel.
+    android {
+        namespace  = "me.dcueto.zentrackapp.shared"
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk     = libs.versions.androidMinSdk.get().toInt()
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
-    jvmMain.dependencies {
-        implementation(libs.ktor.clientCio)    // motor para server y cli
-    }
-    androidMain.dependencies {
-        implementation(libs.ktor.clientOkhttp) // motor para androidApp
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.ktor.clientCore)               // API genérica
+            implementation(libs.ktor.clientContentNegotiation) // plugin JSON
+            implementation(libs.ktor.serializationJson)        // kotlinx.serialization
+            implementation(libs.koin.core)                     // DI
+        }
+        jvmMain.dependencies {
+            implementation(libs.ktor.clientCio)    // motor para server y cli
+        }
+        androidMain.dependencies {
+            implementation(libs.ktor.clientOkhttp) // motor para androidApp
+        }
     }
 }
 ```
@@ -154,7 +169,7 @@ install(DefaultRequest) {
 Dos problemas:
 
 **1. El package no resolvía en la compilación Android de un módulo KMP library:**  
-`DefaultRequest` está en `ktor-client-core`, pero en un módulo de librería KMP (`com.android.library`), la resolución del classpath transitivo para el target Android es más estricta que en un módulo de aplicación. La compilación JVM pasó sin problema; la Android no encontraba el package.
+`DefaultRequest` está en `ktor-client-core`, pero en un módulo de librería KMP (con `com.android.kotlin.multiplatform.library`), la resolución del classpath transitivo para el target Android es más estricta que en un módulo de aplicación. La compilación JVM pasó sin problema; la Android no encontraba el package.
 
 **2. `accept()` no existe en el builder de `DefaultRequest`:**  
 `accept(ContentType.Application.Json)` no es una función disponible dentro del bloque `defaultRequest { }`. La forma correcta habría sido `header(HttpHeaders.Accept, ContentType.Application.Json)`.
@@ -206,6 +221,83 @@ implementation(projects.shared)   // target Android — usa androidMain + common
 ```
 
 Gradle resuelve automáticamente qué source sets incluir según el target del módulo que declara la dependencia. No hay que especificar "quiero el target JVM" — se infiere del plugin que tiene el módulo consumidor (`kotlinJvm`, `kotlinAndroid`, etc.).
+
+---
+
+## El plugin `com.android.kotlin.multiplatform.library` — por qué existe
+
+Hasta AGP 8.x, un módulo KMP con target Android necesitaba DOS plugins aplicados al mismo tiempo:
+
+```kotlin
+// shared/build.gradle.kts — estilo AGP 8.x (OBSOLETO)
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)  // org.jetbrains.kotlin.multiplatform
+    alias(libs.plugins.androidLibrary)       // com.android.library — conflicto con KMP en AGP 9.0
+}
+
+kotlin {
+    androidTarget {                          // declaración del target Android...
+        compilations.all {
+            compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+        }
+    }
+    jvm()
+    sourceSets { ... }
+}
+
+android {                                    // ...y configuración Android en bloque separado
+    namespace = "..."
+    compileSdk = 35
+    defaultConfig { minSdk = 24 }
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17 }
+}
+```
+
+En AGP 9.0 estos dos plugins (`kotlinMultiplatform` + `androidLibrary`) son incompatibles. JetBrains publicó un tercer plugin que los integra:
+
+```kotlin
+// shared/build.gradle.kts — estilo AGP 9.0 (el que usa ZenTrack)
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidKmpLibrary)    // com.android.kotlin.multiplatform.library
+}
+
+kotlin {
+    jvm()
+
+    // android {} reemplaza TANTO androidTarget {} COMO el bloque android {} de primer nivel.
+    // Declaración del target + configuración Android en un único bloque.
+    android {
+        namespace  = "me.dcueto.zentrackapp.shared"
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk     = libs.versions.androidMinSdk.get().toInt()
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    sourceSets { ... }
+}
+```
+
+### Qué cambió exactamente
+
+| Concepto | AGP 8.x | AGP 9.0+ |
+|---|---|---|
+| Plugin de Android para KMP | `com.android.library` | `com.android.kotlin.multiplatform.library` |
+| Declarar target Android | `kotlin { androidTarget { } }` | Se elimina — reemplazado por `kotlin { android { } }` |
+| Configurar namespace/sdk | Bloque `android { }` de primer nivel | Dentro de `kotlin { android { } }` |
+| Configurar JVM target | `androidTarget { compilations... compilerOptions }` | `kotlin { android { compilerOptions { } } }` |
+| Plugin `kotlinAndroid` en `androidApp` | Requerido (`com.android.application` + `kotlin-android`) | Integrado en AGP 9.0 — ya no se aplica manualmente |
+
+### Versiones mínimas requeridas
+
+| Herramienta | Mínimo para KMP + AGP 9.0 | En ZenTrack |
+|---|---|---|
+| AGP | 9.0.0 | `9.0.1` |
+| Gradle | 9.1.0 | `9.1.0` |
+| KGP (Kotlin Gradle Plugin) | 2.0.0 | `2.3.0` |
+| JDK | 17 | 17 |
 
 ---
 

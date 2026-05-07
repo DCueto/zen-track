@@ -128,10 +128,12 @@ El **Gradle Wrapper** resuelve esto. Es un pequeño script (`gradlew` en macOS/L
 
 ```properties
 # gradle/wrapper/gradle-wrapper.properties
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
 ```
 
-Todo el equipo y el CI usan exactamente `8.11.1`, sin importar lo que tengan instalado.
+Todo el equipo y el CI usan exactamente `9.1.0`, sin importar lo que tengan instalado.
+
+> **ZenTrack usa Gradle 9.1.0** porque AGP 9.0 lo requiere como mínimo (ver más abajo).
 
 ### La analogía en .NET: `global.json`
 
@@ -252,6 +254,37 @@ implementation(projects.shared)
 ```
 
 La notación `projects.shared` es generada automáticamente por Gradle a partir de lo que declaraste en `settings.gradle.kts`. Si el módulo se llama `:androidApp`, el accessor es `projects.androidApp`.
+
+---
+
+## Versiones del toolchain de ZenTrack (2026-05)
+
+Las versiones se declaran en `gradle/libs.versions.toml`. Esta tabla resume las que afectan al toolchain de build:
+
+| Herramienta | Versión en ZenTrack | Dónde se declara | Notas |
+|---|---|---|---|
+| Gradle Wrapper | `9.1.0` | `gradle/wrapper/gradle-wrapper.properties` | Mínimo requerido por AGP 9.0 |
+| AGP (Android Gradle Plugin) | `9.0.1` | `libs.versions.toml` → `agp` | Necesario para `com.android.kotlin.multiplatform.library` |
+| Kotlin / KGP | `2.3.0` | `libs.versions.toml` → `kotlin` | Mínimo 2.0.0 para KMP+AGP 9.0 |
+| Ktor | `3.3.3` | `libs.versions.toml` → `ktor` | Server + Client KMP |
+| Exposed | `0.61.0` | `libs.versions.toml` → `exposed` | ORM del servidor |
+| Flyway | `10.15.0` | `libs.versions.toml` → `flyway` | Migraciones SQL del servidor |
+
+### Por qué AGP 9.0 + Gradle 9.1
+
+Hasta AGP 8.x, un módulo KMP usaba dos plugins en el mismo `build.gradle.kts`:
+```kotlin
+alias(libs.plugins.kotlinMultiplatform)
+alias(libs.plugins.androidLibrary)  // com.android.library — DEPRECADO con KMP
+```
+
+Desde AGP 9.0 estos dos plugins son incompatibles. La solución oficial de JetBrains es un tercer plugin que integra ambos:
+```kotlin
+alias(libs.plugins.kotlinMultiplatform)
+alias(libs.plugins.androidKmpLibrary)  // com.android.kotlin.multiplatform.library
+```
+
+Gradle 9.1 es el mínimo requerido por AGP 9.0. El wrapper en `gradle-wrapper.properties` garantiza que todos los developers y el CI usan exactamente esa versión.
 
 ---
 
