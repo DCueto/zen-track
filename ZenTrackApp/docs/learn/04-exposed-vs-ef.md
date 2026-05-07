@@ -439,21 +439,128 @@ suspend fun create(command: CreateTaskCommand): Task = dbQuery {
 
 ---
 
-## Migraciones — Flyway / Liquibase vs EF Migrations
+## Migraciones — Flyway vs EF Migrations
 
-EF Core tiene migraciones generadas automáticamente (`dotnet ef migrations add`). **Exposed no tiene un sistema de migraciones incorporado** equivalente.
+EF Core genera migraciones automáticamente (`dotnet ef migrations add`). **Exposed no tiene un sistema de migraciones incorporado** equivalente. En ZenTrack usamos **Flyway**: gestiona scripts SQL numerados y lleva un registro de cuáles ya se aplicaron.
 
-En ZenTrack usamos el patrón de **SQL scripts numerados**, ejecutados por una librería separada (o manualmente). Los scripts viven en `server/src/main/resources/db/migrations/`:
+### Convención de nombres (idéntica al `0001_Description.cs` de EF)
 
 ```
-V001__init_users.sql
-V002__workspaces.sql
-V003__projects.sql
+server/src/main/resources/db/migration/
+├── V001__create_users.sql
+├── V002__create_workspaces.sql
+├── V003__create_workspace_members.sql
+├── V004__create_projects.sql
+└── V005__create_project_members.sql
 ```
 
-El equivalente en .NET sería usar **Flyway** o **Liquibase** en lugar de EF Migrations.
+El prefijo `V###__` es obligatorio (dos guiones bajos). Flyway ejecuta los scripts en orden ascendente y **nunca los vuelve a ejecutar** una vez aplicados (como `__EFMigrationsHistory` en EF).
 
-> Por qué no usar EF-style migrations: Los scripts SQL son explícitos y deterministas. No hay "magia" que genera SQL incorrecto para esquemas complejos. En un sistema multi-tenant con RLS, necesitas control total sobre el DDL.
+### Configurar Flyway en `DatabaseFactory.kt`
+
+```kotlin
+// DatabaseFactory.kt
+object DatabaseFactory {
+    fun init(application: Application) {
+        val dataSource = HikariDataSource(hikariConfig)
+
+        // Ejecuta las migraciones pendientes antes de conectar Exposed
+        // Equivale a: dotnet ef database update
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations("classpath:db/migration")
+            .load()
+            .migrate()
+
+        Database.connect(dataSource)
+    }
+}
+```
+
+| EF Core | Flyway | Notas |
+|---|---|---|
+| `dotnet ef migrations add NombreMigración` | Crear `V006__descripcion.sql` a mano | Flyway no genera DDL — lo escribes tú |
+| `dotnet ef database update` | `Flyway.configure()...migrate()` | Flyway se llama en el arranque del servidor |
+| `__EFMigrationsHistory` | `flyway_schema_history` | Tabla interna que registra qué migraciones se aplicaron |
+| `migration.Up()` / `migration.Down()` | Solo `.sql` ascendente | Flyway no soporta rollbacks automáticos — se crea un nuevo script de rollback |
+
+> Por qué no EF-style migrations: los scripts SQL son explícitos y deterministas. No hay "magia" que genera DDL incorrecto para esquemas complejos. En un sistema multi-tenant con RLS, necesitas control total sobre el DDL.
+
+### Reglas de escritura de migraciones (reflejan `server/CLAUDE.md`)
+
+- `CREATE TABLE IF NOT EXISTS` — idempotente (ejecutar N veces da el mismo resultado).
+- `CREATE INDEX IF NOT EXISTS` — ídem.
+- **NUNCA** modifiques un script ya aplicado en producción. Crea un `V007__` nuevo.
+- Las dependencias entre tablas dictan el orden: `users` antes de `workspaces`, `workspaces` antes de `workspace_members`.
+
+---
+
+## Row Level Security (RLS) — sin equivalente directo en .NET
+
+PostgreSQL permite definir políticas que filtran filas **a nivel de base de datos**, no en la aplicación. Es una capa de defensa extra que garantiza el aislamiento multi-tenant incluso si hay un bug en el código.
+
+### El patrón: `app.user_id` como variable de sesión
+
+Antes de ejecutar cualquier query con restricción de tenant, la aplicación establece quién es el usuario actual:
+
+```kotlin
+// En el repositorio — dentro de newSuspendedTransaction
+newSuspendedTransaction {
+    exec("SET LOCAL app.user_id = '$userId'")  // solo para esta transacción
+    // ... queries normales con Exposed
+}
+```
+
+Las políticas RLS leen esta variable:
+
+```sql
+-- V001__create_users.sql
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;  -- aplica también al owner de la tabla
+
+-- Users solo ven su propia fila
+CREATE POLICY users_self
+    ON users
+    USING      (id = current_setting('app.user_id', true)::uuid)
+    WITH CHECK (id = current_setting('app.user_id', true)::uuid);
+```
+
+`current_setting('app.user_id', true)` devuelve `NULL` si no está definida (segundo arg = `missing_ok`). `NULL = uuid` es siempre `NULL` (evaluado como falso en el `USING`), así que si el servidor olvida establecer la variable, el usuario no ve nada — comportamiento seguro por defecto.
+
+### `FORCE ROW LEVEL SECURITY` — por qué es necesario
+
+En PostgreSQL, el owner de una tabla **no está sujeto a RLS por defecto**. Como la app usa el mismo usuario que crea las tablas (`zentrack`), añadimos `FORCE` para que las políticas también apliquen al owner:
+
+```sql
+ALTER TABLE workspaces FORCE ROW LEVEL SECURITY;  -- aplica RLS incluso al owner
+```
+
+Sin `FORCE`, el usuario `zentrack` saltaría todas las políticas.
+
+### Políticas `USING` vs `WITH CHECK`
+
+| Cláusula | Cuándo aplica | Analogía EF |
+|---|---|---|
+| `USING` | SELECT, DELETE, UPDATE WHERE | Filtro del `Where()` en la query |
+| `WITH CHECK` | INSERT, UPDATE SET | Validación en `SaveChanges()` antes de escribir |
+
+Ejemplo: política de workspaces (definida en `V003__` una vez existe `workspace_members`):
+
+```sql
+-- Los miembros pueden ver workspaces donde tienen membresía
+CREATE POLICY workspaces_member_access
+    ON workspaces
+    USING (
+        id IN (
+            SELECT workspace_id FROM workspace_members
+            WHERE user_id = current_setting('app.user_id', true)::uuid
+        )
+    )
+    -- Solo el owner puede crear workspaces (owner_id = usuario actual)
+    WITH CHECK (
+        owner_id = current_setting('app.user_id', true)::uuid
+    );
+```
 
 ---
 
@@ -499,7 +606,10 @@ El formato JDBC (`jdbc:postgresql://host:port/database`) es diferente al formato
 | `.Where().FirstOrDefault()` | `.find { }.firstOrNull()` | SELECT con filtro |
 | `SaveChangesAsync()` | `transaction { }` / `newSuspendedTransaction { }` | Persistir cambios |
 | `BeginTransactionAsync()` | `newSuspendedTransaction { }` | Transacción explícita |
-| EF Migrations | Scripts SQL numerados (V001__.sql) | Evolución del esquema |
-| `dotnet ef database update` | Aplicar scripts manualmente / Flyway | Ejecutar migraciones |
+| EF Migrations | Scripts SQL numerados (`V001__.sql`) | Evolución del esquema |
+| `dotnet ef database update` | `Flyway.configure()...migrate()` en el arranque | Ejecutar migraciones |
+| `__EFMigrationsHistory` | `flyway_schema_history` | Registro de migraciones aplicadas |
+| Row-level security (SQL Server) | `ENABLE/FORCE ROW LEVEL SECURITY` + `CREATE POLICY` | PostgreSQL RLS — aislamiento multi-tenant en la BD |
+| — | `SET LOCAL app.user_id = '...'` | Variable de sesión por transacción para RLS |
 | `Npgsql` NuGet package | `org.postgresql:postgresql` JAR | Driver de PostgreSQL |
 | `appsettings.json` | `application.conf` (HOCON) | Configuración |

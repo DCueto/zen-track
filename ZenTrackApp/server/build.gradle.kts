@@ -32,6 +32,8 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.javaTime)
     implementation(libs.hikaricp)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.postgresql)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }
