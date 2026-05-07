@@ -24,10 +24,10 @@
 
 ### Shared (KMP)
 
-- [ ] **[Config Shared]** Reconfigurar `shared/build.gradle.kts`: eliminar target `js()`, añadir `androidTarget()`. Eliminar `jsMain/` source set y `generateTypeScriptDefinitions()`.
-- [ ] **[Config Shared]** Añadir Ktor Client a `commonMain.dependencies`: `ktor-client-core` + engine `ktor-client-cio` en `jvmMain` + engine `ktor-client-okhttp` en `androidMain`. Añadir `ktor-client-content-negotiation` y `kotlinx-serialization-json`.
-- [ ] **[Config Shared]** Crear la estructura de carpetas en `commonMain`: `model/`, `dto/`, `network/`, `repository/`, `di/`. Configurar el cliente HTTP base (baseUrl desde `expect/actual`, headers comunes, manejo de errores).
-- [ ] **[Cleanup Shared]** Eliminar `Platform.js.kt` y cualquier archivo en `jsMain/`. Adaptar `Platform.kt` / `Platform.jvm.kt` con el nuevo `androidMain/Platform.android.kt`.
+- [x] **[Config Shared]** Reconfigurar `shared/build.gradle.kts`: eliminar target `js()`, añadir `androidTarget()`. Eliminar `jsMain/` source set y `generateTypeScriptDefinitions()`.
+- [x] **[Config Shared]** Añadir Ktor Client a `commonMain.dependencies`: `ktor-client-core` + engine `ktor-client-cio` en `jvmMain` + engine `ktor-client-okhttp` en `androidMain`. Añadir `ktor-client-content-negotiation` y `kotlinx-serialization-json`.
+- [x] **[Config Shared]** Crear la estructura de carpetas en `commonMain`: `model/`, `dto/`, `network/`, `repository/`, `di/`. Configurar el cliente HTTP base (baseUrl desde `expect/actual`, headers comunes, manejo de errores).
+- [x] **[Cleanup Shared]** Eliminar `Platform.js.kt` y cualquier archivo en `jsMain/`. Adaptar `Platform.kt` / `Platform.jvm.kt` con el nuevo `androidMain/Platform.android.kt`.
 
 ### androidApp/ (Jetpack Compose Android)
 
