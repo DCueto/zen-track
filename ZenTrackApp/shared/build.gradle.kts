@@ -1,18 +1,20 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKmpLibrary)
     alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
     jvm()
-    androidTarget {
-        compilations.all {
-            compileTaskProvider.configure {
-                compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                }
-            }
+
+    // android {} replaces both androidTarget {} (KMP target) and the top-level android {} block.
+    // Required by com.android.kotlin.multiplatform.library (AGP 9.0+).
+    android {
+        namespace  = "me.dcueto.zentrackapp.shared"
+        compileSdk = libs.versions.androidCompileSdk.get().toInt()
+        minSdk     = libs.versions.androidMinSdk.get().toInt()
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
 
@@ -33,17 +35,5 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.clientOkhttp)
         }
-    }
-}
-
-android {
-    namespace = "me.dcueto.zentrackapp.shared"
-    compileSdk = libs.versions.androidCompileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.androidMinSdk.get().toInt()
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
