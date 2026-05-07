@@ -21,17 +21,17 @@ Documentación progresiva del ecosistema Kotlin/KMP construida **a medida que de
 | [04 — Exposed ORM para devs EF](./04-exposed-vs-ef.md) | Tables, HikariCP, application.conf vs appsettings.json |
 | [05 — JWT en Ktor](./05-jwt-en-ktor.md) | Autenticación JWT, JwtService, rutas públicas vs protegidas |
 
+### Multiplatforma — KMP
+
+| Doc | Qué cubre |
+|-----|-----------|
+| [06 — KMP Overview](./06-kmp-overview.md) | `expect/actual`, source sets, Ktor Client engines, Koin en KMP |
+
 ### Android — Jetpack Compose
 
 | Doc | Qué cubre |
 |-----|-----------|
 | [07 — Jetpack Compose vs Blazor](./07-compose-vs-blazor.md) | Composables, MVI, ViewModel, Navigation, Koin |
-
-### Multiplatforma (próximamente)
-
-| Doc | Qué cubre |
-|-----|-----------|
-| 06 — KMP Overview | `expect/actual`, targets, shared code |
 
 ---
 
