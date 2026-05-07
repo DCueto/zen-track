@@ -18,3 +18,6 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.testJunit)
 }
+kotlin {
+    jvmToolchain(8)
+}

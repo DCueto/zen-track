@@ -34,6 +34,10 @@ dependencies {
     implementation(libs.hikaricp)
     implementation(libs.flyway.core)
     implementation(libs.flyway.postgresql)
+    implementation(libs.bcrypt)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
+}
+kotlin {
+    jvmToolchain(8)
 }

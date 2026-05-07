@@ -36,4 +36,5 @@ kotlin {
             implementation(libs.ktor.clientOkhttp)
         }
     }
+    jvmToolchain(8)
 }
