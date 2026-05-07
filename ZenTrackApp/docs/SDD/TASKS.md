@@ -56,7 +56,7 @@
     
 - [x] **[Backend]** Implementar endpoints para Proyectos, incluyendo la validación de que el `project_key` sea único por Workspace.
     
-- [ ] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Tras cada cambio de modelo, verificar compilación con `./gradlew :shared:jvmJar :shared:testDebugUnitTest`.
+- [x] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Tras cada cambio de modelo, verificar compilación con `./gradlew :shared:jvmJar :shared:testDebugUnitTest`.
     
 - [ ] **[Frontend]** Crear la UI del Login/Registro.
     
