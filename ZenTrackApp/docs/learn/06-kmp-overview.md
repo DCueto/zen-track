@@ -119,9 +119,6 @@ kotlin {
         namespace  = "me.dcueto.zentrackapp.shared"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk     = libs.versions.androidMinSdk.get().toInt()
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
     }
 
     sourceSets {
@@ -138,6 +135,8 @@ kotlin {
             implementation(libs.ktor.clientOkhttp) // motor para androidApp
         }
     }
+
+    jvmToolchain(17)
 }
 ```
 
@@ -155,34 +154,85 @@ fun createHttpClient(): HttpClient = HttpClient {   // ← sin especificar engin
 
 ---
 
-## Por qué DefaultRequest falló en el target Android
+## Por qué no usamos DefaultRequest para la URL base
 
-Durante la configuración intentamos usar el plugin `DefaultRequest` de Ktor para definir la URL base en el factory:
+La razón real: en un módulo KMP construido con `com.android.kotlin.multiplatform.library`, el package `io.ktor.client.plugins.defaultrequest` fallaba en tiempo de compilación para el target Android. En lugar de añadir otra dependencia para resolverlo, eliminamos `DefaultRequest` por completo. La arquitectura más limpia es: el factory de `HttpClient` es genérico y agnóstico al transporte; cada repositorio conoce su propia URL y construye rutas completas usando `apiBaseUrl`. Esto evita acoplar el cliente a un servidor concreto.
+
+Nota adicional: la llamada `header()` dentro de un bloque `DefaultRequest` no existe — `DefaultRequestBuilder` usa `headers.append(name, value)`. Así que aunque el import hubiera resuelto, el código habría fallado igualmente.
+
+---
+
+## TokenStore y withAuth() — inyectar el Bearer token
+
+Tras un login o registro exitoso, el token JWT se guarda en un objeto singleton accesible desde `commonMain`:
 
 ```kotlin
-// Esto falló en el target androidMain
-install(DefaultRequest) {
-    url(apiBaseUrl)
+// commonMain/network/TokenStore.kt
+object TokenStore {
+    var token: String? = null
 }
 ```
 
-Dos problemas:
-
-**1. El package no resolvía en la compilación Android de un módulo KMP library:**  
-`DefaultRequest` está en `ktor-client-core`, pero en un módulo de librería KMP (con `com.android.kotlin.multiplatform.library`), la resolución del classpath transitivo para el target Android es más estricta que en un módulo de aplicación. La compilación JVM pasó sin problema; la Android no encontraba el package.
-
-**2. `accept()` no existe en el builder de `DefaultRequest`:**  
-`accept(ContentType.Application.Json)` no es una función disponible dentro del bloque `defaultRequest { }`. La forma correcta habría sido `header(HttpHeaders.Accept, ContentType.Application.Json)`.
-
-La solución correcta — que es además mejor arquitectura — es no configurar la URL base en el factory del cliente. El `HttpClient` es genérico; la URL específica del servidor va en cada llamada del repositorio:
+El código que llama al repositorio de autenticación asigna el token:
 
 ```kotlin
-// CORRECTO — el repositorio conoce la URL, el cliente no
-class WorkspaceRepository(private val client: HttpClient) {
-    suspend fun getAll(): List<Workspace> =
-        client.get("$apiBaseUrl/api/workspaces").body()
+TokenStore.token = authResponse.token
+```
+
+Y `withAuth()` es una función de extensión sobre `HttpRequestBuilder`:
+
+```kotlin
+// commonMain/network/ZenTrackHttpClient.kt
+fun HttpRequestBuilder.withAuth() {
+    TokenStore.token?.let { bearerAuth(it) }
 }
 ```
+
+`HttpRequestBuilder` es el builder que Ktor te da dentro de cualquier lambda `client.get { }` / `client.post { }`. `bearerAuth(token)` es una extensión de Ktor que establece `Authorization: Bearer $token`.
+
+Analogía con .NET: en `HttpClient` harías `client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token)`. En Ktor no existe `DefaultRequestHeaders`, así que añadimos la cabecera en el builder de cada llamada mediante la función de extensión.
+
+Cada llamada en los repositorios la usa así:
+
+```kotlin
+client.get("$apiBaseUrl/api/workspaces") { withAuth() }
+client.post("$apiBaseUrl/api/workspaces") {
+    withAuth()
+    setBody(CreateWorkspaceRequest(name))
+}
+```
+
+---
+
+## Network repositories — implementaciones de red en commonMain
+
+`WorkspaceApiRepository` y `ProjectApiRepository` implementan las interfaces compartidas realizando llamadas HTTP reales:
+
+```kotlin
+// commonMain/network/WorkspaceApiRepository.kt
+class WorkspaceApiRepository(private val client: HttpClient) : WorkspaceRepository {
+
+    override suspend fun findAllByUser(userId: String): List<Workspace> =
+        client.get("$apiBaseUrl/api/workspaces") { withAuth() }
+            .body<List<WorkspaceResponse>>()
+            .map { it.toDomain() }
+
+    override suspend fun create(name: String, ownerId: String): Workspace =
+        client.post("$apiBaseUrl/api/workspaces") {
+            withAuth()
+            setBody(CreateWorkspaceRequest(name))
+        }.body<WorkspaceResponse>().toDomain()
+
+    private fun WorkspaceResponse.toDomain() =
+        Workspace(id = id, name = name, ownerId = ownerId, createdAt = createdAt)
+}
+```
+
+Los parámetros `userId` y `ownerId` se ignoran en la implementación de red porque el servidor extrae la identidad desde el JWT. Las interfaces fueron diseñadas pensando en las implementaciones del lado del servidor (que necesitan el UUID para `SET LOCAL app.user_id`). Las implementaciones cliente simplemente ignoran estos parámetros — la cabecera JWT transporta la identidad.
+
+`.body<T>()` es la forma de Ktor de deserializar el cuerpo de la respuesta al tipo `T` usando ContentNegotiation — equivalente a `response.Content.ReadFromJsonAsync<T>()` de `System.Net.Http.Json`.
+
+El `HttpResponseValidator` de `ZenTrackHttpClient` convierte los códigos de estado HTTP de error en subtipos de `ApiException` antes de que se llame a `.body<T>()`, por lo que los repositorios no necesitan try/catch para errores HTTP.
 
 ---
 
@@ -191,11 +241,21 @@ class WorkspaceRepository(private val client: HttpClient) {
 En .NET, `IServiceCollection` se configura en el punto de entrada (`Program.cs`). En KMP, Koin tiene módulos por capa:
 
 ```
-shared/commonMain/di/SharedModule.kt     → HttpClient, repositorios (Fase 2)
-androidApp/di/AndroidAppModule.kt        → ViewModels (Fase 2)
+shared/commonMain/di/SharedModule.kt     → HttpClient, repositorios
+androidApp/di/AndroidAppModule.kt        → ViewModels
 ```
 
-El `sharedModule` se registra junto al `androidAppModule` en `ZenTrackApp.onCreate()`:
+El `sharedModule` registra el cliente HTTP y los repositorios de red:
+
+```kotlin
+val sharedModule = module {
+    single { createHttpClient() }
+    single<WorkspaceRepository> { WorkspaceApiRepository(get()) }
+    single<ProjectRepository> { ProjectApiRepository(get()) }
+}
+```
+
+Estos bindings ya están registrados y disponibles para `androidApp` y `cli`. El `sharedModule` se registra junto al `androidAppModule` en `ZenTrackApp.onCreate()`:
 
 ```kotlin
 // ZenTrackApp.kt
@@ -205,8 +265,6 @@ startKoin {
     modules(sharedModule, androidAppModule)   // shared primero, app después
 }
 ```
-
-Para `server/` y `cli/`, el `sharedModule` se registrará cuando añadamos los repositorios en Fase 2.
 
 ---
 
@@ -271,12 +329,11 @@ kotlin {
         namespace  = "me.dcueto.zentrackapp.shared"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk     = libs.versions.androidMinSdk.get().toInt()
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
     }
 
     sourceSets { ... }
+
+    jvmToolchain(17)
 }
 ```
 
@@ -287,7 +344,7 @@ kotlin {
 | Plugin de Android para KMP | `com.android.library` | `com.android.kotlin.multiplatform.library` |
 | Declarar target Android | `kotlin { androidTarget { } }` | Se elimina — reemplazado por `kotlin { android { } }` |
 | Configurar namespace/sdk | Bloque `android { }` de primer nivel | Dentro de `kotlin { android { } }` |
-| Configurar JVM target | `androidTarget { compilations... compilerOptions }` | `kotlin { android { compilerOptions { } } }` |
+| Configurar JVM target | `androidTarget { compilations... compilerOptions }` | `kotlin { jvmToolchain(17) }` al final del bloque `kotlin { }` |
 | Plugin `kotlinAndroid` en `androidApp` | Requerido (`com.android.application` + `kotlin-android`) | Integrado en AGP 9.0 — ya no se aplica manualmente |
 
 ### Versiones mínimas requeridas

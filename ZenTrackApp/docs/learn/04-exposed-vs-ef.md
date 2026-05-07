@@ -564,6 +564,107 @@ CREATE POLICY workspaces_member_access
 
 ---
 
+## RLS Bootstrap: el problema del huevo y la gallina
+
+Las políticas RLS parecen sencillas sobre el papel, pero en la práctica hay dos momentos donde la propia política bloquea una operación legítima: el **login** y la **creación del primer workspace**. Ambos casos aparecieron en ZenTrack y se resolvieron en `V006__fix_rls_policies.sql`.
+
+### Problema 1 — El SELECT de login queda bloqueado por RLS
+
+La política inicial de `users` era:
+
+```sql
+CREATE POLICY users_self ON users
+    USING      (id = current_setting('app.user_id', true)::uuid)
+    WITH CHECK (id = current_setting('app.user_id', true)::uuid);
+```
+
+El flujo de login es:
+
+1. El usuario envía email + contraseña.
+2. El servidor hace `SELECT * FROM users WHERE email = ?` para recuperar el hash y el UUID.
+3. **Problema:** en este punto `app.user_id` aún no está establecido (¡es lo que estamos buscando!). `current_setting` devuelve `NULL`. `NULL = uuid` es siempre `NULL`, que PostgreSQL evalúa como falso en el `USING`. Resultado: cero filas devueltas aunque el usuario exista.
+
+En .NET sería como si un middleware de autorización rechazara la petición `/login` antes de que el `AuthController` pudiera leer el email de la base de datos — el guardia impide la operación que necesitas para identificarte.
+
+**Solución en V006:** separar la política única en dos, con reglas distintas para lectura y escritura:
+
+```sql
+DROP POLICY IF EXISTS users_self ON users;
+
+CREATE POLICY users_self_read ON users FOR SELECT
+    USING (current_setting('app.user_id', true) IS NULL
+           OR current_setting('app.user_id', true) = ''
+           OR id = current_setting('app.user_id', true)::uuid);
+
+CREATE POLICY users_self_write ON users FOR INSERT
+    WITH CHECK (current_setting('app.user_id', true) IS NOT NULL
+                AND current_setting('app.user_id', true) <> ''
+                AND id = current_setting('app.user_id', true)::uuid);
+```
+
+- `users_self_read` (SELECT): permisiva — si la variable no está establecida, deja pasar (necesario para el login). Una vez autenticado, solo devuelve la fila propia.
+- `users_self_write` (INSERT): estricta — exige que `app.user_id` esté definido y coincida con el UUID que se está insertando. Sin variable → operación bloqueada.
+
+La idea clave: no toda operación sobre `users` requiere el mismo nivel de restricción. El SELECT de login es legítimamente "anónimo"; el INSERT nunca lo es.
+
+---
+
+### Problema 2 — Bootstrap de `workspace_members`: el OWNER no puede añadirse a sí mismo
+
+Al crear un workspace, el servidor debe insertar automáticamente al creador como primer miembro con rol `OWNER`. La política original de `workspace_members` tenía este `WITH CHECK`:
+
+```sql
+WITH CHECK (
+    workspace_id IN (
+        SELECT wm.workspace_id FROM workspace_members wm
+        WHERE wm.user_id = current_setting('app.user_id', true)::uuid
+          AND wm.role IN ('OWNER', 'ADMIN')
+    )
+)
+```
+
+La lógica es: "solo puedes insertar filas en un workspace donde ya eres OWNER o ADMIN". Tiene sentido para el caso general (añadir a alguien a un workspace existente), pero falla en el momento de creación:
+
+- Para insertar la fila de membresía, necesitas ser OWNER.
+- Para ser OWNER, necesitas que la fila de membresía exista.
+
+Es el problema del huevo y la gallina. En .NET sería análogo a un middleware que valida permisos de recurso antes de que el recurso exista en la base de datos.
+
+**Solución en V006:** añadir una condición OR que permita el bootstrap cuando el workspace recién fue creado por este usuario:
+
+```sql
+DROP POLICY IF EXISTS workspace_members_access ON workspace_members;
+
+CREATE POLICY workspace_members_access ON workspace_members
+    USING (workspace_id IN (
+        SELECT wm.workspace_id FROM workspace_members wm
+        WHERE wm.user_id = current_setting('app.user_id', true)::uuid
+    ))
+    WITH CHECK (
+        workspace_id IN (
+            SELECT wm.workspace_id FROM workspace_members wm
+            WHERE wm.user_id = current_setting('app.user_id', true)::uuid
+              AND wm.role IN ('OWNER', 'ADMIN')
+        )
+        OR (
+            user_id = current_setting('app.user_id', true)::uuid
+            AND role = 'OWNER'
+            AND workspace_id IN (
+                SELECT id FROM workspaces
+                WHERE owner_id = current_setting('app.user_id', true)::uuid
+            )
+        )
+    );
+```
+
+El OR añadido dice: "también puedes insertar una fila de membresía si (a) la fila es para ti mismo, (b) el rol es OWNER, y (c) el workspace tiene `owner_id` igual a tu UUID". La columna `owner_id` en `workspaces` se establece en el mismo `transaction {}` antes del INSERT en `workspace_members`, por lo que la condición (c) ya es verdadera en el momento de la verificación.
+
+---
+
+La clave en ambos casos es que RLS es una red de seguridad de la BD — cuando es demasiado restrictiva bloquea operaciones legítimas. En lugar de desactivarla, ajustas la política con precisión quirúrgica en una nueva migración.
+
+---
+
 ## `application.conf` — La connection string
 
 ```hocon

@@ -236,7 +236,8 @@ Cliente                    Ktor Server
    |                            |  configureAuthentication() no actúa
    |                            |  (ruta pública, fuera de authenticate)
    |                            |  authRoutes() recibe la request
-   |                            |  JwtService.generateToken(userId = email)
+   |                            |  Register: hash password → insert user → token con UUID real
+   |                            |  Login: SELECT user by email → verifica BCrypt hash → token con UUID real
    |  { token: "eyJ..." }  ◄──  |
    |                            |
    |  GET /api/workspaces       |
@@ -253,15 +254,60 @@ Cliente                    Ktor Server
 
 ---
 
-## Estado actual en ZenTrack (Fase 1)
+## BCrypt — hashing de contraseñas
 
-La infraestructura JWT está completa:
-- `configureAuthentication()` valida tokens en todas las rutas protegidas
-- `JwtService.generateToken()` genera tokens HMAC256 con claim `userId`
-- `POST /api/auth/login` genera un token real (sin validar credenciales aún — Fase 2 añade la tabla `Users`)
-- `POST /api/auth/register` retorna 501 hasta que Fase 2 implemente el modelo de usuarios
+El equivalente en Kotlin de `BCryptPasswordHasher<T>` de ASP.NET Core Identity es la librería **`at.favre.lib:bcrypt`** (declarada en `gradle/libs.versions.toml`).
 
-**Pendiente Fase 2**: El login actualmente genera un token para cualquier email sin verificar si el usuario existe en BD. Cuando se cree la tabla `Users`, el endpoint validará el `password_hash` contra el almacenado.
+### Comparativa
+
+```csharp
+// ASP.NET Core Identity
+var hasher = new PasswordHasher<IdentityUser>();
+string hash = hasher.HashPassword(user, password);
+PasswordVerificationResult result = hasher.VerifyHashedPassword(user, hash, password);
+```
+
+```kotlin
+// at.favre.lib:bcrypt
+val hash: String = BCrypt.withDefaults().hashToString(12, password.toCharArray())
+val verified: Boolean = BCrypt.verifyer().verify(password.toCharArray(), hash).verified
+```
+
+El `12` es el **cost factor** (equivalente a `IterationCount` en ASP.NET Core Identity). El valor por defecto de ASP.NET Core Identity es también 10-12 iteraciones.
+
+### AuthService real de ZenTrack
+
+```kotlin
+// core/AuthService.kt
+class AuthService(
+    private val userRepository: UserRepositoryImpl,
+    private val jwtService: JwtService
+) {
+    suspend fun register(email: String, password: String, name: String): String {
+        val passwordHash = BCrypt.withDefaults().hashToString(12, password.toCharArray())
+        val user = userRepository.create(email, passwordHash, name)
+        return jwtService.generateToken(userId = user.id)  // user.id es un UUID real
+    }
+
+    suspend fun login(email: String, password: String): String? {
+        val user = userRepository.findByEmail(email) ?: return null
+        val verified = BCrypt.verifyer().verify(password.toCharArray(), user.passwordHash).verified
+        if (!verified) return null
+        return jwtService.generateToken(userId = user.id)
+    }
+}
+```
+
+> `userRepository.findByEmail()` funciona sin necesidad de establecer `app.user_id` porque la migración V006 dividió la política RLS `users_self` para permitir SELECT cuando `app.user_id` no está establecido. Ver `04-exposed-vs-ef.md` para los detalles.
+
+---
+
+## Estado actual en ZenTrack (Fase 2)
+
+La autenticación está completamente implementada:
+- `POST /api/auth/register` crea un usuario en PostgreSQL con la contraseña hasheada con BCrypt y devuelve un JWT
+- `POST /api/auth/login` consulta el usuario por email, verifica el hash BCrypt y devuelve un JWT
+- El claim `userId` del JWT contiene el UUID real del usuario (no solo el string del email como hacía el stub de Fase 1)
 
 ---
 
