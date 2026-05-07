@@ -39,6 +39,12 @@ Documentación progresiva del ecosistema Kotlin/KMP construida **a medida que de
 |-----|-----------|
 | [07 — Jetpack Compose vs Blazor](./07-compose-vs-blazor.md) | Composables, MVI, ViewModel, Navigation, Koin |
 
+### Web — React + MUI + Zustand
+
+| Doc | Qué cubre |
+|-----|-----------|
+| [09 — React + MUI + Zustand para devs .NET](./09-react-mui-zustand.md) | React vs Blazor, ThemeProvider M3, Selector Pattern Zustand, variables de entorno Vite, tipos OpenAPI |
+
 ---
 
 ## Cómo está organizado

@@ -9,8 +9,12 @@
     "types:generate": "openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^9.0.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",

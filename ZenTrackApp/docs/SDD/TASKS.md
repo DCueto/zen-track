@@ -43,10 +43,10 @@
 ### webApp/ (React + TypeScript)
 
 - [x] **[Hecho]** Proyecto React 19 + TypeScript 5.8 + Vite 7 operativo.
-- [ ] **[Config Web]** Eliminar la dependencia `"shared": "0.0.0-unspecified"` de `package.json`. Instalar `openapi-typescript` como devDependency. Configurar script `npm run types:generate` en `package.json`.
-- [ ] **[Config Web]** Instalar dependencias de producción: `@mui/material`, `@emotion/react`, `@emotion/styled`, `zustand`. Configurar el `ThemeProvider` MUI con el tema base de ZenTrack en `index.tsx`.
-- [ ] **[Config Web]** Crear la estructura de carpetas definitiva: `screens/`, `store/`, `services/`, `types/`. Configurar `VITE_API_BASE_URL` en `.env.local` (excluido de git). Generar `src/types/api.ts` inicial desde la spec OpenAPI.
-    
+- [x] **[Config Web]** Eliminar la dependencia `"shared": "0.0.0-unspecified"` de `package.json`. Instalar `openapi-typescript` como devDependency. Configurar script `npm run types:generate` en `package.json`.
+- [x] **[Config Web]** Instalar dependencias de producción: `@mui/material`, `@emotion/react`, `@emotion/styled`, `zustand`. Configurar el `ThemeProvider` MUI con el tema base de ZenTrack en `index.tsx`.
+- [x] **[Config Web]** Crear la estructura de carpetas definitiva: `screens/`, `store/`, `services/`, `types/`. Configurar `VITE_API_BASE_URL` en `.env.local` (excluido de git). Generar `src/types/api.ts` inicial desde la spec OpenAPI.
+
 
 ## Fase 2: Historia 1 - Navegación de Workspaces y Configuración de Proyectos
 
