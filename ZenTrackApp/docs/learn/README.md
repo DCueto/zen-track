@@ -27,6 +27,12 @@ Documentación progresiva del ecosistema Kotlin/KMP construida **a medida que de
 |-----|-----------|
 | [06 — KMP Overview](./06-kmp-overview.md) | `expect/actual`, source sets, Ktor Client engines, Koin en KMP |
 
+### CLI — Clikt
+
+| Doc | Qué cubre |
+|-----|-----------|
+| [08 — Clikt CLI vs System.CommandLine](./08-clikt-cli.md) | Comandos, opciones, `echo()`, estructura, tests |
+
 ### Android — Jetpack Compose
 
 | Doc | Qué cubre |

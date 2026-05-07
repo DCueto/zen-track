@@ -37,8 +37,8 @@
 
 ### cli/ (Kotlin/JVM + Clikt)
 
-- [ ] **[Setup CLI]** Crear el módulo `cli/` en el monorepo Gradle con `application` plugin. Añadir dependencia `implementation(projects.shared)` y `implementation(libs.clikt)`.
-- [ ] **[Config CLI]** Definir la estructura de comandos raíz con Clikt: `zentrack tasks`, `zentrack workspaces`, `zentrack sprints`.
+- [x] **[Setup CLI]** Crear el módulo `cli/` en el monorepo Gradle con `application` plugin. Añadir dependencia `implementation(projects.shared)` y `implementation(libs.clikt)`.
+- [x] **[Config CLI]** Definir la estructura de comandos raíz con Clikt: `zentrack tasks`, `zentrack workspaces`, `zentrack sprints`.
 
 ### webApp/ (React + TypeScript)
 

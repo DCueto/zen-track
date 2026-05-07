@@ -13,6 +13,7 @@ application {
 dependencies {
     implementation(projects.shared)
     implementation(libs.clikt)
+    implementation(libs.koin.core)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.testJunit)
 }
