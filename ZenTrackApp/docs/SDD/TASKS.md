@@ -8,7 +8,7 @@
 - [x] **[Cleanup Shared]** Reemplazar el contenido de `Platform.kt` / `Platform.jvm.kt` / `Platform.js.kt` — el patrón `expect/actual` es válido, pero la implementación actual solo devuelve un nombre de plataforma. Redefinir la interfaz con utilidades reales de ZenTrack (ej. generación de UUIDs nativos).
 - [x] **[Cleanup Shared]** Eliminar `SharedCommonTest.kt` (test de demostración vacío).
 - [x] **[Cleanup Backend]** Reemplazar la ruta `GET /` de demostración en `Application.kt` por la estructura de plugins y routing definitiva. Eliminar `ApplicationTest.kt` de demostración.
-- [ ] **[Cleanup Android]** Eliminar el módulo `composeApp/` del monorepo Gradle. Crear el módulo `androidApp/` con la estructura definida en `androidApp/CLAUDE.md`.
+- [x] **[Cleanup Android]** Eliminar el módulo `composeApp/` del monorepo Gradle. Crear el módulo `androidApp/` con la estructura definida en `androidApp/CLAUDE.md`.
 - [x] **[Cleanup Web]** Eliminar `webApp/src/components/Greeting/` y `webApp/src/components/JSLogo/` (demos). Actualizar `index.tsx` para montar la app ZenTrack.
 
 ---
@@ -31,9 +31,9 @@
 
 ### androidApp/ (Jetpack Compose Android)
 
-- [ ] **[Setup Android]** Crear el módulo `androidApp/` en el monorepo Gradle con `com.android.application` + `kotlin-android` + `compose`. Añadir dependencia `implementation(projects.shared)`.
-- [ ] **[Config Android]** Definir `ZenTrackTheme` con `colorScheme`, `typography` y `shapes` propios de M3. Configurar `MainActivity` como punto de entrada con Koin y navegación.
-- [ ] **[Config Android]** Establecer el sistema de navegación (Jetpack Navigation Compose) con el grafo de rutas: Workspaces → Board → TaskDetail.
+- [x] **[Setup Android]** Crear el módulo `androidApp/` en el monorepo Gradle con `com.android.application` + `kotlin-android` + `compose`. Añadir dependencia `implementation(projects.shared)`.
+- [x] **[Config Android]** Definir `ZenTrackTheme` con `colorScheme`, `typography` y `shapes` propios de M3. Configurar `MainActivity` como punto de entrada con Koin y navegación.
+- [x] **[Config Android]** Establecer el sistema de navegación (Jetpack Navigation Compose) con el grafo de rutas: Workspaces → Board → TaskDetail.
 
 ### cli/ (Kotlin/JVM + Clikt)
 
