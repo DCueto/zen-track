@@ -8,6 +8,7 @@ version = "1.0.0"
 
 application {
     mainClass.set("me.dcueto.zentrackapp.cli.MainKt")
+    applicationName = "zentrack"
 }
 
 dependencies {
