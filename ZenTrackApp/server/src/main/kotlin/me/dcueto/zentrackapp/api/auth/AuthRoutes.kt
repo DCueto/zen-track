@@ -5,31 +5,31 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import me.dcueto.zentrackapp.core.JwtService
-
-@Serializable
-data class LoginRequest(val email: String, val password: String)
-
-@Serializable
-data class AuthResponse(val token: String)
+import me.dcueto.zentrackapp.core.AuthService
+import me.dcueto.zentrackapp.dto.AuthResponse
+import me.dcueto.zentrackapp.dto.LoginRequest
+import me.dcueto.zentrackapp.dto.RegisterRequest
 
 @Serializable
 private data class ErrorResponse(val error: String)
 
-fun Route.authRoutes(jwtService: JwtService) {
+fun Route.authRoutes(authService: AuthService) {
     route("/api/auth") {
-        // POST /api/auth/login — pública, sin JWT
-        post("/login") {
-            val request = call.receive<LoginRequest>()
-            // Fase 2: validar credenciales contra la tabla Users
-            val token = jwtService.generateToken(userId = request.email)
-            call.respond(HttpStatusCode.OK, AuthResponse(token = token))
+        post("/register") {
+            val req = call.receive<RegisterRequest>()
+            if (req.email.isBlank() || req.password.isBlank() || req.name.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, ErrorResponse("email, password y name son requeridos"))
+                return@post
+            }
+            val token = authService.register(req.email, req.password, req.name)
+            call.respond(HttpStatusCode.Created, AuthResponse(token = token))
         }
 
-        // POST /api/auth/register — pública, sin JWT
-        post("/register") {
-            // Fase 2: crear usuario en la tabla Users
-            call.respond(HttpStatusCode.NotImplemented, ErrorResponse("Pendiente implementación en Fase 2"))
+        post("/login") {
+            val req = call.receive<LoginRequest>()
+            val token = authService.login(req.email, req.password)
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Credenciales incorrectas"))
+            call.respond(HttpStatusCode.OK, AuthResponse(token = token))
         }
     }
 }

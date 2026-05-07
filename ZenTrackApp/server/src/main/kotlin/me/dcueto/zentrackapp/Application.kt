@@ -9,8 +9,12 @@ import me.dcueto.zentrackapp.api.configureCors
 import me.dcueto.zentrackapp.api.configureRouting
 import me.dcueto.zentrackapp.api.configureSerialization
 import me.dcueto.zentrackapp.api.configureStatusPages
+import me.dcueto.zentrackapp.core.AuthService
 import me.dcueto.zentrackapp.core.JwtService
+import me.dcueto.zentrackapp.core.WorkspaceService
 import me.dcueto.zentrackapp.db.DatabaseFactory
+import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
+import me.dcueto.zentrackapp.db.repositories.WorkspaceRepositoryImpl
 
 fun main() {
     embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
@@ -34,5 +38,9 @@ fun Application.module() {
         audience = cfg.property("jwt.audience").getString(),
         expirationMs = cfg.propertyOrNull("jwt.expirationMs")?.getString()?.toLong() ?: 86_400_000L
     )
-    configureRouting(jwtService)
+
+    val authService = AuthService(UserRepositoryImpl(), jwtService)
+    val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
+
+    configureRouting(authService, workspaceService)
 }

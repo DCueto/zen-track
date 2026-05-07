@@ -52,7 +52,7 @@
 
 - [x] **[Backend]** Crear las migraciones y modelos de BD para `Users`, `Workspaces`, `Workspace_Members`, `Projects` y `Project_Members`.
     
-- [ ] **[Backend]** Implementar endpoints CRUD para Workspaces (`GET`, `POST`).
+- [x] **[Backend]** Implementar endpoints CRUD para Workspaces (`GET`, `POST`).
     
 - [ ] **[Backend]** Implementar endpoints para Proyectos, incluyendo la validación de que el `project_key` sea único por Workspace.
     

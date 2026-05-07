@@ -4,16 +4,18 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.routing.*
 import me.dcueto.zentrackapp.api.auth.authRoutes
-import me.dcueto.zentrackapp.core.JwtService
+import me.dcueto.zentrackapp.api.workspaces.workspaceRoutes
+import me.dcueto.zentrackapp.core.AuthService
+import me.dcueto.zentrackapp.core.WorkspaceService
 
-fun Application.configureRouting(jwtService: JwtService) {
+fun Application.configureRouting(authService: AuthService, workspaceService: WorkspaceService) {
     routing {
         // Rutas públicas: no requieren JWT
-        authRoutes(jwtService)
+        authRoutes(authService)
 
         // Rutas protegidas: requieren JWT válido en Authorization: Bearer <token>
         authenticate("jwt") {
-            // Fase 2+: workspaceRoutes(), projectRoutes(), taskRoutes(), etc.
+            workspaceRoutes(workspaceService)
         }
     }
 }
