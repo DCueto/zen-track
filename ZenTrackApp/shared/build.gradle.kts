@@ -13,9 +13,6 @@ kotlin {
         namespace  = "me.dcueto.zentrackapp.shared"
         compileSdk = libs.versions.androidCompileSdk.get().toInt()
         minSdk     = libs.versions.androidMinSdk.get().toInt()
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
     }
 
     sourceSets {
@@ -36,5 +33,5 @@ kotlin {
             implementation(libs.ktor.clientOkhttp)
         }
     }
-    jvmToolchain(8)
+    jvmToolchain(17)
 }

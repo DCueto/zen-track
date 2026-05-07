@@ -19,16 +19,10 @@ android {
         compose = true
     }
 
-    compileOptions {
-    }
 }
 
-// kotlin-android is built into com.android.application in AGP 9.0 — top-level kotlin {} is provided automatically
 kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    }
-    jvmToolchain(8)
+    jvmToolchain(17)
 }
 
 dependencies {
