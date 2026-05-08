@@ -31,12 +31,12 @@ No accedas a la BD desde la ruta ni desde el service directamente.
 - [ ] Autenticación JWT verificada si el endpoint no es público
 - [ ] Multi-tenancy respetada: las queries filtran por `workspace_id`
 - [ ] Migración SQL añadida si hay cambio de esquema
-- [ ] `openapi.json` actualizado con el nuevo endpoint y sus schemas
+- [ ] Ruta documentada con el DSL de ktor-openapi (tags, summary, request body, response codes y tipos)
 - [ ] Tests del endpoint escritos
 - [ ] Verificación: `./gradlew :server:test`
 
 ## Post-implementación (si hay clientes web)
 
 ```bash
-cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+cd webApp && npx openapi-typescript http://localhost:8080/api.json -o src/types/api.ts
 ```

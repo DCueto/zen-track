@@ -30,7 +30,7 @@ Este proyecto es un monorepo que utiliza el ecosistema de Kotlin para compartir 
 
 - **CLI:** Kotlin/JVM + Clikt. Depende de `:shared`. Comandos de terminal para gestionar tareas.
     
-- **Frontend Web:** React 19 + TypeScript 5.8 + Zustand + MUI (Material 3). Tipos TypeScript generados desde la spec OpenAPI del servidor con `openapi-typescript`.
+- **Frontend Web:** React 19 + TypeScript 5.8 + Zustand + MUI (Material 3). Tipos TypeScript generados desde la spec OpenAPI del servidor (`GET /api.json`) con `openapi-typescript`. Swagger UI disponible en `GET /swagger`.
     
 
 ## 📂 Estructura del Monorepo
@@ -117,8 +117,10 @@ npm run start
 
 > Los tipos TypeScript se generan desde la spec OpenAPI del servidor. Con el servidor corriendo en `localhost:8080`, regenera los tipos con:
 > ```
-> cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+> cd webApp && npx openapi-typescript http://localhost:8080/api.json -o src/types/api.ts
 > ```
+>
+> Swagger UI interactivo disponible en `http://localhost:8080/swagger` (spec en `/api.json`).
 
 ## 📜 Reglas de Trabajo y GitFlow (¡Importante!)
 

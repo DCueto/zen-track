@@ -19,5 +19,5 @@ dependencies {
     testImplementation(libs.kotlin.testJunit)
 }
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(17)
 }

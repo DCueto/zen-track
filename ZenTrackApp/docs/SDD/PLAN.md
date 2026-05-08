@@ -27,9 +27,9 @@ shared/commonMain  (@Serializable data class Task, Workspace, Project…)
         ↓
 server/  (Ktor expone la spec vía plugin OpenAPI)
         ↓
-http://localhost:8080/openapi.json
+http://localhost:8080/api.json
         ↓
-npx openapi-typescript openapi.json -o webApp/src/types/api.ts
+npx openapi-typescript http://localhost:8080/api.json -o webApp/src/types/api.ts
         ↓
 webApp/src/  →  import type { Task } from './types/api'  (tipado estricto)
 ```

@@ -12,7 +12,7 @@ Plataforma minimalista de gestión de proyectos multi-tenant con integración Gi
 ┌─────────────────────────────────────────────────────┐
 │                      server/                         │
 │  Ktor API REST · PostgreSQL · JWT Auth · Webhooks    │
-│  openapi.json generado automáticamente               │
+│  GET /api.json (spec) · GET /swagger (Swagger UI)    │
 └──────────────────────┬──────────────────────────────┘
                        │ HTTP/REST
          ┌─────────────┼──────────────┐
@@ -30,7 +30,7 @@ Plataforma minimalista de gestión de proyectos multi-tenant con integración Gi
 
 ## Flujo de datos principal
 
-1. **server** expone la API REST y genera `openapi.json`.
+1. **server** expone la API REST. La spec OpenAPI 3.1 se sirve en `GET /api.json`; Swagger UI en `GET /swagger`.
 2. **webApp** regenera `src/types/api.ts` desde la spec para mantener sincronía de tipos.
 3. **shared** contiene los modelos KMP usados por `server`, `androidApp` y `cli`.
 4. Los clientes (`webApp`, `androidApp`, `cli`) consumen el server; **nunca se comunican entre sí**.
@@ -60,6 +60,7 @@ Credenciales de desarrollo: `user=zentrack`, `password=zentrack_dev`, `db=zentra
 ## Decisiones técnicas tomadas
 
 - **Sin Axios**: la webApp usa `fetch` nativo. Axios tiene vulnerabilidades conocidas.
+- **Swagger UI vía ktor-openapi (smiley4 5.4.0)**: la spec se genera automáticamente del DSL de rutas; `GET /api.json` devuelve el JSON, `GET /swagger` sirve la UI. Equivale a Swashbuckle en ASP.NET Core.
 - **Sin React Context** para estado dinámico: se usa Zustand con selector pattern.
 - **Tipos TypeScript generados**: nunca manuales. La spec OpenAPI es la fuente de verdad.
 - **Multi-tenancy lógica**: todas las queries de BD filtran por `workspace_id`. RLS en PostgreSQL nunca deshabilitado.

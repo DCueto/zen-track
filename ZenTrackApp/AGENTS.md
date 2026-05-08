@@ -10,6 +10,7 @@ ZenTrack es una plataforma minimalista de gestión de proyectos multi-tenant est
 |---|---|---|
 | Lenguaje | Kotlin | 2.3.0 |
 | Backend | Ktor (Netty) | 3.3.3 |
+| Documentación API | ktor-openapi + ktor-swagger-ui (smiley4) | 5.4.0 |
 | Base de datos | PostgreSQL + Exposed/Ktorm | 17 |
 | Infraestructura local | Docker + Docker Compose | — |
 | Core compartido | Kotlin Multiplatform (targets: jvm + androidTarget) | 2.3.0 |
@@ -85,12 +86,16 @@ docker compose up -d
 
 # Web:
 cd webApp && npm run start                # Vite dev server
+
+# Swagger UI (con el servidor corriendo):
+# GET http://localhost:8080/swagger       → UI interactiva
+# GET http://localhost:8080/api.json      → spec OpenAPI 3.1 JSON
 ```
 
 ### Generación de Tipos para webApp
 ```bash
 # Tras levantar el servidor, regenerar tipos TypeScript desde la spec OpenAPI:
-cd webApp && npx openapi-typescript http://localhost:8080/openapi.json -o src/types/api.ts
+cd webApp && npx openapi-typescript http://localhost:8080/api.json -o src/types/api.ts
 ```
 
 ## Estrategia de Testing
@@ -170,6 +175,7 @@ Al completar cualquier tarea de `TASKS.md`, **actualiza o crea el documento corr
 | Ktor, plugins, routing | `docs/learn/03-ktor-vs-aspnet.md` | Completo |
 | Exposed ORM, HikariCP, transacciones | `docs/learn/04-exposed-vs-ef.md` | Completo |
 | JWT en Ktor | `docs/learn/05-jwt-en-ktor.md` | Completo |
+| OpenAPI / Swagger UI en Ktor | `docs/learn/10-openapi-en-ktor.md` | Completo |
 | KMP, expect/actual, targets | `docs/learn/06-kmp-overview.md` | Pendiente |
 | Jetpack Compose vs Blazor | `docs/learn/07-compose-vs-blazor.md` | Pendiente |
 

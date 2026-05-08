@@ -20,6 +20,7 @@ Documentación progresiva del ecosistema Kotlin/KMP construida **a medida que de
 | [03 — Ktor para devs ASP.NET](./03-ktor-vs-aspnet.md) | Plugins, routing, ContentNegotiation, CORS, StatusPages |
 | [04 — Exposed ORM para devs EF](./04-exposed-vs-ef.md) | Tables, HikariCP, application.conf vs appsettings.json |
 | [05 — JWT en Ktor](./05-jwt-en-ktor.md) | Autenticación JWT, JwtService, rutas públicas vs protegidas |
+| [10 — OpenAPI / Swagger UI en Ktor](./10-openapi-en-ktor.md) | ktor-openapi (smiley4), DSL de documentación de rutas, Swagger UI |
 
 ### Multiplatforma — KMP
 

@@ -65,11 +65,19 @@ Flujo obligatorio al recibir un evento `push`:
 4. Actualiza `Tasks.status_id` en una transacción.
 5. **PROHIBIDO** actualizar el estado si la tarea está en status `Done` o `Closed` (regla de negocio: estados terminales son inmutables vía webhook).
 
+### Documentación de Endpoints (ktor-openapi)
+
+- **SIEMPRE** documenta cada endpoint nuevo con el DSL de `ktor-openapi` (smiley4). Usa las extensiones `get(path, { docBlock }) { }` y `post(path, { docBlock }) { }` de `io.github.smiley4.ktoropenapi`.
+- El bloque de docs debe incluir: `tags(...)`, `summary`, `description`, `request { body<T>() }` / `pathParameter<T>()`, y `response { code(HttpStatusCode.X) { body<T>() } }` para cada código posible.
+- Los endpoints dentro de `authenticate("jwt") { }` reciben el esquema `bearerAuth` y la respuesta 401 automáticamente — **no los declares de nuevo**.
+- La spec se sirve en `GET /api.json`; la UI interactiva en `GET /swagger`.
+
 ### Serialización y DTOs
 
 - Usa `kotlinx.serialization`. **PROHIBIDO** Jackson o Gson en este módulo.
 - Los DTOs de request y response son `@Serializable data class` en `shared/commonMain`, no en `server/`. Así el cliente Desktop y Web reutilizan las mismas clases.
 - **NUNCA** expongas campos de BD internos (`password_hash`, `rls_policy_id`) en los DTOs de response.
+- **Excepción**: `api/ApiModels.kt` contiene `ErrorResponse` como clase pública (no en `shared/`). Debe ser pública para que `ktor-openapi` la acceda vía reflexión JVM al generar el schema. **PROHIBIDO** moverla a `private` ni duplicarla en archivos de rutas.
 
 ### Tests
 
@@ -109,7 +117,7 @@ server/src/test/kotlin/
 La BD de desarrollo corre en Docker. Antes de ejecutar el servidor o los tests de integración, levanta el contenedor desde la raíz del monorepo:
 
 ```bash
-docker compose up -d          # arranca postgres:16 en puerto 5432
+docker compose up -d          # arranca postgres:17 en puerto 5433
 docker compose down           # para (datos persisten)
 docker compose down -v        # reset completo del volumen
 ```
