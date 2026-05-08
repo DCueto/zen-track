@@ -85,22 +85,22 @@ En Exposed, la tabla y la entidad son dos clases separadas. La tabla describe el
 // db/UsersTable.kt
 
 // 1. La tabla — describe columnas y tipos (equivale a OnModelCreating + DbSet)
-object UsersTable : UUIDTable("users") {           // UUIDTable = PK de tipo UUID autoincremental
+object UsersTable : LongIdTable("users") {         // LongIdTable = PK BIGINT autoincremental (ver sección siguiente)
     val email        = varchar("email", 255).uniqueIndex()
     val passwordHash = varchar("password_hash", 255)
     val createdAt    = timestamp("created_at").defaultExpression(CurrentTimestamp)
 }
 
 // 2. La entidad — el objeto con el que trabajas (equivale al POCO en EF)
-class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
-    companion object : UUIDEntityClass<UserEntity>(UsersTable)  // el "DbSet" — da acceso a find(), all(), etc.
+class UserEntity(id: EntityID<Long>) : LongEntity(id) {
+    companion object : LongEntityClass<UserEntity>(UsersTable)  // el "DbSet" — da acceso a find(), all(), etc.
 
     var email        by UsersTable.email
     var passwordHash by UsersTable.passwordHash
     var createdAt    by UsersTable.createdAt
 
     fun toUser() = User(                           // convierte a modelo de dominio (NUNCA devuelvas la entidad fuera del transaction)
-        id        = id.value.toString(),
+        id        = id.value,
         email     = email,
         createdAt = createdAt.toString()
     )
@@ -109,10 +109,93 @@ class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
 
 | EF Core | Exposed DAO | Notas |
 |---|---|---|
-| `public class User { }` (POCO) | `class UserEntity(...) : UUIDEntity(id)` | El objeto con el que trabajas |
-| `DbSet<User> Users` | `companion object : UUIDEntityClass<UserEntity>` | Punto de entrada para queries |
-| `DbContext` (configura la BD) | `object UsersTable : UUIDTable("users")` | Define el esquema de la tabla |
+| `public class User { }` (POCO) | `class UserEntity(...) : LongEntity(id)` | El objeto con el que trabajas |
+| `DbSet<User> Users` | `companion object : LongEntityClass<UserEntity>` | Punto de entrada para queries |
+| `DbContext` (configura la BD) | `object UsersTable : LongIdTable("users")` | Define el esquema de la tabla |
 | `modelBuilder.Entity<User>()` | Columnas declaradas en el `object` | Configuración de columnas |
+
+---
+
+## Elegir el tipo de PK: UUIDTable vs IntIdTable vs LongIdTable
+
+Exposed tiene tres clases base para tablas con PK autogestionada. La elección equivale a elegir el tipo de `Id` en EF Core.
+
+### La equivalencia .NET
+
+| C# / EF Core | Exposed | PostgreSQL DDL generado |
+|---|---|---|
+| `[Key] public Guid Id { get; set; }` | `UUIDTable` | `id UUID DEFAULT gen_random_uuid()` |
+| `[Key] public int Id { get; set; }` | `IntIdTable` | `id SERIAL` (INT4 + secuencia) |
+| `[Key] public long Id { get; set; }` | `LongIdTable` | `id BIGSERIAL` (INT8 + secuencia) |
+
+### Por qué ZenTrack usa `LongIdTable`
+
+El análisis práctico para elegir:
+
+| Criterio | UUID | Int (SERIAL) | Long (BIGSERIAL) |
+|---|---|---|---|
+| Tamaño en disco | 16 bytes | 4 bytes | 8 bytes |
+| Máximo de filas | Ilimitado | ~2.100 millones | ~9,2 × 10¹⁸ |
+| IDs en URLs | `/workspaces/0029cd84-…` | `/workspaces/1` | `/workspaces/1` |
+| Generado por | Cliente o BD | BD (secuencia) | BD (secuencia) |
+| Útil en sistemas distribuidos | Sí | No | No |
+| Dificultad en el código | Alta (conversiones UUID↔String) | Baja | Baja |
+
+UUID tiene sentido cuando tienes varios servicios generando IDs de forma independiente sin coordinarse. Para una app monolítica como ZenTrack, añade complejidad sin beneficio.
+
+`Long` sobre `Int`: ambos son igual de simples en el código. `Long` elimina el riesgo de overflow en tablas grandes (como `Tasks`) sin coste adicional.
+
+### Cómo se declara
+
+```kotlin
+// ZenTrack — tablas reales
+object UsersTable : LongIdTable("users") {
+    val email = text("email")
+    // id se hereda: Column<EntityID<Long>>, auto-generado por PostgreSQL
+}
+
+object WorkspacesTable : LongIdTable("workspaces") {
+    val ownerId = reference("owner_id", UsersTable)  // Column<EntityID<Long>>
+    val name    = text("name")
+}
+```
+
+Las FKs con `reference()` heredan el tipo automáticamente: si `UsersTable : LongIdTable`, entonces `reference("owner_id", UsersTable)` crea una columna `BIGINT NOT NULL REFERENCES users(id)`.
+
+### El SQL que genera Flyway (escrito a mano, no por Exposed)
+
+```sql
+-- ZenTrack usa Flyway para gestionar el esquema (Flyway no lo genera Exposed)
+CREATE TABLE users (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email TEXT NOT NULL,
+    ...
+);
+
+CREATE TABLE workspaces (
+    id       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    owner_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ...
+);
+```
+
+`GENERATED ALWAYS AS IDENTITY` es el estándar SQL moderno para auto-increment. PostgreSQL lo usa internamente con una secuencia, igual que `BIGSERIAL`, pero la sintaxis IDENTITY es más portátil.
+
+### La RLS con IDs numéricos
+
+El cambio de UUID a Long afecta todos los casts en las políticas RLS:
+
+```sql
+-- Antes (UUID)
+USING (id = current_setting('app.user_id', true)::uuid)
+
+-- Ahora (Long)
+USING (id = current_setting('app.user_id', true)::bigint)
+```
+
+El patrón `SET LOCAL app.user_id = '$userId'` sigue siendo el mismo — el string `'42'` se castea a `BIGINT 42` en PostgreSQL sin problema.
+
+**Caso especial en registro:** con UUID, el ID se generaba en el cliente antes del INSERT, lo que permitía `SET LOCAL app.user_id = newId` y luego verificar `id = app.user_id::uuid` en el `WITH CHECK`. Con BIGINT generado por la BD, el ID no existe hasta que el INSERT ocurre. La solución fue simplificar esa política a `WITH CHECK (true)` — válido porque el `UNIQUE` en `email` ya impide crear filas duplicadas maliciosas.
 
 ---
 

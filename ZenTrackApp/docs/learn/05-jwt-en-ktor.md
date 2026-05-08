@@ -110,11 +110,11 @@ class JwtService(
     private val audience: String,
     private val expirationMs: Long = 86_400_000L  // 24h en milisegundos
 ) {
-    fun generateToken(userId: String): String =
+    fun generateToken(userId: Long): String =   // Long, no String — ver sección "Claims numéricos"
         JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
-            .withClaim("userId", userId)
+            .withClaim("userId", userId)        // se guarda como número JSON, no como string
             .withExpiresAt(Date(System.currentTimeMillis() + expirationMs))
             .sign(Algorithm.HMAC256(secret))
 }
@@ -188,12 +188,72 @@ app.MapGet("/api/me", (ClaimsPrincipal user) =>
 // En cualquier ruta dentro de authenticate("jwt") { }
 get("/api/me") {
     val principal = call.principal<JWTPrincipal>()
-    val userId = principal?.payload?.getClaim("userId")?.asString()
+    val userId = principal?.payload?.getClaim("userId")?.asLong()  // asLong(), no asString()
     call.respond(HttpStatusCode.OK, mapOf("userId" to userId))
 }
 ```
 
 `JWTPrincipal` es el equivalente de `ClaimsPrincipal` en .NET. Contiene el payload del JWT con todos los claims que pusiste al generar el token.
+
+---
+
+## Claims numéricos — la trampa de `.asString()`
+
+Este es uno de los bugs más silenciosos que puedes encontrar al cambiar el tipo de ID.
+
+### El problema
+
+`.withClaim("userId", userId)` en `java-jwt` guarda el claim con el **tipo nativo** del valor:
+
+```kotlin
+.withClaim("userId", "abc-123")   // → JSON: "userId": "abc-123"  (string)
+.withClaim("userId", 42L)         // → JSON: "userId": 42         (number)
+```
+
+Cuando lees el claim de vuelta, el método importa:
+
+```kotlin
+payload.getClaim("userId").asString()  // → null  si el claim es un número
+payload.getClaim("userId").asLong()    // → 42L   ✓
+payload.getClaim("userId").asInt()     // → 42    ✓
+```
+
+`.asString()` devuelve `null` para claims de tipo numérico — sin excepción, sin warning. El bug es que la validación del token (en `Plugins.kt`) también usa `.asString()`, así que cada token generado con un Long falla silenciosamente:
+
+```kotlin
+// Plugins.kt — validación del JWT
+validate { credential ->
+    // BUG: si userId se guardó como Long, asString() devuelve null → token rechazado
+    if (credential.payload.getClaim("userId").asString() != null) {
+        JWTPrincipal(credential.payload)
+    } else null   // ← siempre llega aquí con IDs numéricos
+}
+```
+
+El síntoma: el `POST /api/auth/register` devuelve un token, pero cualquier ruta protegida responde con `401 Token inválido o expirado`. El token es válido — la validación está mal.
+
+### La solución
+
+Alinear el tipo en generación y en lectura:
+
+```kotlin
+// Generación (JwtService.kt)
+.withClaim("userId", userId)   // userId: Long → se guarda como número
+
+// Validación (Plugins.kt)
+validate { credential ->
+    if (credential.payload.getClaim("userId").asLong() != null) {  // ← asLong()
+        JWTPrincipal(credential.payload)
+    } else null
+}
+
+// Lectura en rutas
+val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
+```
+
+### Analogía .NET
+
+En ASP.NET Core, los claims siempre son strings (`Claim.Value: string`), así que este problema no existe. En `java-jwt`, el tipo del claim refleja el tipo JSON real — la misma diferencia que hay entre un campo `string` y un campo `number` en JSON. Si lo guardas como número, tienes que leerlo como número.
 
 ---
 
@@ -286,7 +346,7 @@ class AuthService(
     suspend fun register(email: String, password: String, name: String): String {
         val passwordHash = BCrypt.withDefaults().hashToString(12, password.toCharArray())
         val user = userRepository.create(email, passwordHash, name)
-        return jwtService.generateToken(userId = user.id)  // user.id es un UUID real
+        return jwtService.generateToken(userId = user.id)  // user.id es Long (BIGINT)
     }
 
     suspend fun login(email: String, password: String): String? {
@@ -307,7 +367,7 @@ class AuthService(
 La autenticación está completamente implementada:
 - `POST /api/auth/register` crea un usuario en PostgreSQL con la contraseña hasheada con BCrypt y devuelve un JWT
 - `POST /api/auth/login` consulta el usuario por email, verifica el hash BCrypt y devuelve un JWT
-- El claim `userId` del JWT contiene el UUID real del usuario (no solo el string del email como hacía el stub de Fase 1)
+- El claim `userId` del JWT contiene el `BIGINT` del usuario como número JSON (no string) — se lee con `.asLong()` en todas las rutas y en la validación del plugin
 
 ---
 
