@@ -58,7 +58,7 @@
     
 - [x] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`. Tras cada cambio de modelo, verificar compilación con `./gradlew :shared:jvmJar :shared:testDebugUnitTest`.
     
-- [ ] **[Frontend]** Crear la UI del Login/Registro.
+- [x] **[Frontend]** Crear la UI del Login/Registro.
     
 - [ ] **[Frontend]** Crear la "Vista Raíz": Panel de selección de Workspaces.
     
