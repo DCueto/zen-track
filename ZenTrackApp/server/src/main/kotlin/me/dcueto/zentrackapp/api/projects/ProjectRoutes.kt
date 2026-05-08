@@ -20,8 +20,9 @@ private data class ErrorResponse(val error: String)
 fun Route.projectRoutes(projectService: ProjectService) {
     route("/api/workspaces/{workspaceId}/projects") {
         get {
-            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
-            val workspaceId = call.parameters["workspaceId"]!!
+            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
+            val workspaceId = call.parameters["workspaceId"]!!.toLongOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("workspaceId inválido"))
             val projects = projectService.getProjectsForWorkspace(workspaceId, userId)
             call.respond(HttpStatusCode.OK, projects.map {
                 ProjectResponse(it.id, it.workspaceId, it.projectKey, it.name, it.taskCounter, it.createdAt)
@@ -29,8 +30,9 @@ fun Route.projectRoutes(projectService: ProjectService) {
         }
 
         post {
-            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
-            val workspaceId = call.parameters["workspaceId"]!!
+            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
+            val workspaceId = call.parameters["workspaceId"]!!.toLongOrNull()
+                ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorResponse("workspaceId inválido"))
             val req = call.receive<CreateProjectRequest>()
 
             val key = req.projectKey.trim().uppercase()

@@ -10,12 +10,12 @@ import me.dcueto.zentrackapp.repository.WorkspaceRepository
 
 class WorkspaceApiRepository(private val client: HttpClient) : WorkspaceRepository {
 
-    override suspend fun findAllByUser(userId: String): List<Workspace> =
+    override suspend fun findAllByUser(userId: Long): List<Workspace> =
         client.get("$apiBaseUrl/api/workspaces") { withAuth() }
             .body<List<WorkspaceResponse>>()
             .map { it.toDomain() }
 
-    override suspend fun create(name: String, ownerId: String): Workspace =
+    override suspend fun create(name: String, ownerId: Long): Workspace =
         client.post("$apiBaseUrl/api/workspaces") {
             withAuth()
             setBody(CreateWorkspaceRequest(name))

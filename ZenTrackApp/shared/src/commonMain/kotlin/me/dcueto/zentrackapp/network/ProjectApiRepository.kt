@@ -10,12 +10,12 @@ import me.dcueto.zentrackapp.repository.ProjectRepository
 
 class ProjectApiRepository(private val client: HttpClient) : ProjectRepository {
 
-    override suspend fun findAllByWorkspace(workspaceId: String, userId: String): List<Project> =
+    override suspend fun findAllByWorkspace(workspaceId: Long, userId: Long): List<Project> =
         client.get("$apiBaseUrl/api/workspaces/$workspaceId/projects") { withAuth() }
             .body<List<ProjectResponse>>()
             .map { it.toDomain() }
 
-    override suspend fun create(workspaceId: String, projectKey: String, name: String, userId: String): Project =
+    override suspend fun create(workspaceId: Long, projectKey: String, name: String, userId: Long): Project =
         client.post("$apiBaseUrl/api/workspaces/$workspaceId/projects") {
             withAuth()
             setBody(CreateProjectRequest(projectKey, name))

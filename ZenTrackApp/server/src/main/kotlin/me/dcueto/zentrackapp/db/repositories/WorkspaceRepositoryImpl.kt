@@ -13,30 +13,26 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
-import java.util.UUID
 
 class WorkspaceRepositoryImpl : WorkspaceRepository {
 
-    override suspend fun findAllByUser(userId: String): List<Workspace> {
-        val uuid = UUID.fromString(userId)
-        return newSuspendedTransaction(Dispatchers.IO) {
-            exec("SET LOCAL app.user_id = '$uuid'")
+    override suspend fun findAllByUser(userId: Long): List<Workspace> =
+        newSuspendedTransaction(Dispatchers.IO) {
+            exec("SET LOCAL app.user_id = '$userId'")
             WorkspacesTable.selectAll().map { it.toWorkspace() }
         }
-    }
 
-    override suspend fun create(name: String, ownerId: String): Workspace {
-        val ownerUuid = UUID.fromString(ownerId)
-        return newSuspendedTransaction(Dispatchers.IO) {
-            exec("SET LOCAL app.user_id = '$ownerUuid'")
+    override suspend fun create(name: String, ownerId: Long): Workspace =
+        newSuspendedTransaction(Dispatchers.IO) {
+            exec("SET LOCAL app.user_id = '$ownerId'")
             val workspaceId = WorkspacesTable.insertAndGetId {
                 it[WorkspacesTable.name] = name
-                it[WorkspacesTable.ownerId] = EntityID(ownerUuid, UsersTable)
+                it[WorkspacesTable.ownerId] = EntityID(ownerId, UsersTable)
                 it[WorkspacesTable.createdAt] = Instant.now()
             }
             WorkspaceMembersTable.insert {
                 it[WorkspaceMembersTable.workspaceId] = workspaceId
-                it[WorkspaceMembersTable.userId] = EntityID(ownerUuid, UsersTable)
+                it[WorkspaceMembersTable.userId] = EntityID(ownerId, UsersTable)
                 it[WorkspaceMembersTable.role] = "OWNER"
             }
             WorkspacesTable.selectAll()
@@ -44,12 +40,11 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
                 .single()
                 .toWorkspace()
         }
-    }
 
     private fun ResultRow.toWorkspace() = Workspace(
-        id = this[WorkspacesTable.id].value.toString(),
+        id = this[WorkspacesTable.id].value,
         name = this[WorkspacesTable.name],
-        ownerId = this[WorkspacesTable.ownerId].value.toString(),
+        ownerId = this[WorkspacesTable.ownerId].value,
         createdAt = this[WorkspacesTable.createdAt].toString()
     )
 }

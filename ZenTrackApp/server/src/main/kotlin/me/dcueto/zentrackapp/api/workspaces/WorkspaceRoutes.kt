@@ -17,13 +17,13 @@ private data class ErrorResponse(val error: String)
 fun Route.workspaceRoutes(workspaceService: WorkspaceService) {
     route("/api/workspaces") {
         get {
-            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val workspaces = workspaceService.getWorkspacesForUser(userId)
             call.respond(HttpStatusCode.OK, workspaces.map { WorkspaceResponse(it.id, it.name, it.ownerId, it.createdAt) })
         }
 
         post {
-            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+            val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val req = call.receive<CreateWorkspaceRequest>()
             if (req.name.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("name es requerido"))

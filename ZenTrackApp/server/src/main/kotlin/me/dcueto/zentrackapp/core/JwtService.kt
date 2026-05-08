@@ -10,7 +10,7 @@ class JwtService(
     private val audience: String,
     private val expirationMs: Long = 86_400_000L
 ) {
-    fun generateToken(userId: String): String =
+    fun generateToken(userId: Long): String =
         JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)

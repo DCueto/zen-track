@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Workspace(
-    val id: String,
+    val id: Long,
     val name: String,
-    val ownerId: String,
+    val ownerId: Long,
     val createdAt: String
 )

@@ -7,8 +7,8 @@ data class CreateWorkspaceRequest(val name: String)
 
 @Serializable
 data class WorkspaceResponse(
-    val id: String,
+    val id: Long,
     val name: String,
-    val ownerId: String,
+    val ownerId: Long,
     val createdAt: String
 )

@@ -1,7 +1,6 @@
 package me.dcueto.zentrackapp
 
 import io.ktor.server.application.*
-import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import me.dcueto.zentrackapp.api.configureAuthentication
 import me.dcueto.zentrackapp.api.configureCallLogging
@@ -18,10 +17,7 @@ import me.dcueto.zentrackapp.db.repositories.ProjectRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.WorkspaceRepositoryImpl
 
-fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
-}
+fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
     // Serialization primero: StatusPages usa call.respond(ErrorResponse(...)),

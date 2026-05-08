@@ -4,9 +4,9 @@ import me.dcueto.zentrackapp.model.Workspace
 import me.dcueto.zentrackapp.repository.WorkspaceRepository
 
 class WorkspaceService(private val repository: WorkspaceRepository) {
-    suspend fun getWorkspacesForUser(userId: String): List<Workspace> =
+    suspend fun getWorkspacesForUser(userId: Long): List<Workspace> =
         repository.findAllByUser(userId)
 
-    suspend fun createWorkspace(name: String, ownerId: String): Workspace =
+    suspend fun createWorkspace(name: String, ownerId: Long): Workspace =
         repository.create(name, ownerId)
 }

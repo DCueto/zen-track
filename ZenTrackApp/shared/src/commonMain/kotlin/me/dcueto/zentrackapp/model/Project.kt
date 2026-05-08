@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Project(
-    val id: String,
-    val workspaceId: String,
+    val id: Long,
+    val workspaceId: Long,
     val projectKey: String,
     val name: String,
     val taskCounter: Int,
