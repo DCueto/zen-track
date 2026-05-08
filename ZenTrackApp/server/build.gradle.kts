@@ -35,9 +35,11 @@ dependencies {
     implementation(libs.flyway.core)
     implementation(libs.flyway.postgresql)
     implementation(libs.bcrypt)
+    implementation(libs.smiley4.ktorOpenapi)
+    implementation(libs.smiley4.swaggerUi)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(17)
 }

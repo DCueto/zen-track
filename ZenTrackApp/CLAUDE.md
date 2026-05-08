@@ -33,6 +33,7 @@ Después de completar cada tarea de `TASKS.md`, **actualiza o crea el documento 
 | JWT en Ktor | `docs/learn/05-jwt-en-ktor.md` |
 | KMP, expect/actual | `docs/learn/06-kmp-overview.md` (pendiente) |
 | Jetpack Compose | `docs/learn/07-compose-vs-blazor.md` (pendiente) |
+| OpenAPI / Swagger UI en Ktor | `docs/learn/10-openapi-en-ktor.md` |
 
 ### Reglas de Dependencias
 

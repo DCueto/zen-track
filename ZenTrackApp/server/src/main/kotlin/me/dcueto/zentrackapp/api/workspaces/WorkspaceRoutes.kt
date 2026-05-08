@@ -1,28 +1,54 @@
 package me.dcueto.zentrackapp.api.workspaces
 
+import io.github.smiley4.ktoropenapi.get
+import io.github.smiley4.ktoropenapi.post
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
+import me.dcueto.zentrackapp.api.ErrorResponse
 import me.dcueto.zentrackapp.core.WorkspaceService
 import me.dcueto.zentrackapp.dto.CreateWorkspaceRequest
 import me.dcueto.zentrackapp.dto.WorkspaceResponse
 
-@Serializable
-private data class ErrorResponse(val error: String)
-
 fun Route.workspaceRoutes(workspaceService: WorkspaceService) {
     route("/api/workspaces") {
-        get {
+        get({
+            tags("Workspaces")
+            summary = "Listar workspaces"
+            description = "Devuelve los workspaces a los que pertenece el usuario autenticado"
+            response {
+                code(HttpStatusCode.OK) {
+                    body<List<WorkspaceResponse>>()
+                }
+            }
+        }) {
             val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val workspaces = workspaceService.getWorkspacesForUser(userId)
             call.respond(HttpStatusCode.OK, workspaces.map { WorkspaceResponse(it.id, it.name, it.ownerId, it.createdAt) })
         }
 
-        post {
+        post({
+            tags("Workspaces")
+            summary = "Crear workspace"
+            description = "Crea un nuevo workspace con el usuario autenticado como propietario"
+            request {
+                body<CreateWorkspaceRequest> {
+                    description = "Nombre del nuevo workspace"
+                }
+            }
+            response {
+                code(HttpStatusCode.Created) {
+                    body<WorkspaceResponse>()
+                }
+                code(HttpStatusCode.BadRequest) {
+                    description = "El nombre del workspace es requerido"
+                    body<ErrorResponse>()
+                }
+            }
+        }) {
             val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val req = call.receive<CreateWorkspaceRequest>()
             if (req.name.isBlank()) {

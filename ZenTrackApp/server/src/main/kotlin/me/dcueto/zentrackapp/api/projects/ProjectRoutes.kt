@@ -1,12 +1,14 @@
 package me.dcueto.zentrackapp.api.projects
 
+import io.github.smiley4.ktoropenapi.get
+import io.github.smiley4.ktoropenapi.post
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.serialization.Serializable
+import me.dcueto.zentrackapp.api.ErrorResponse
 import me.dcueto.zentrackapp.core.DuplicateProjectKeyException
 import me.dcueto.zentrackapp.core.ProjectService
 import me.dcueto.zentrackapp.dto.CreateProjectRequest
@@ -14,12 +16,27 @@ import me.dcueto.zentrackapp.dto.ProjectResponse
 
 private val PROJECT_KEY_REGEX = Regex("^[A-Z][A-Z0-9]{0,9}$")
 
-@Serializable
-private data class ErrorResponse(val error: String)
-
 fun Route.projectRoutes(projectService: ProjectService) {
     route("/api/workspaces/{workspaceId}/projects") {
-        get {
+        get({
+            tags("Projects")
+            summary = "Listar proyectos"
+            description = "Devuelve los proyectos del workspace al que pertenece el usuario autenticado"
+            request {
+                pathParameter<Long>("workspaceId") {
+                    description = "ID del workspace"
+                }
+            }
+            response {
+                code(HttpStatusCode.OK) {
+                    body<List<ProjectResponse>>()
+                }
+                code(HttpStatusCode.BadRequest) {
+                    description = "workspaceId no es un número válido"
+                    body<ErrorResponse>()
+                }
+            }
+        }) {
             val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val workspaceId = call.parameters["workspaceId"]!!.toLongOrNull()
                 ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("workspaceId inválido"))
@@ -29,7 +46,32 @@ fun Route.projectRoutes(projectService: ProjectService) {
             })
         }
 
-        post {
+        post({
+            tags("Projects")
+            summary = "Crear proyecto"
+            description = "Crea un nuevo proyecto en el workspace especificado. La clave debe tener 1-10 caracteres alfanuméricos, empezando por letra"
+            request {
+                pathParameter<Long>("workspaceId") {
+                    description = "ID del workspace"
+                }
+                body<CreateProjectRequest> {
+                    description = "Clave y nombre del proyecto"
+                }
+            }
+            response {
+                code(HttpStatusCode.Created) {
+                    body<ProjectResponse>()
+                }
+                code(HttpStatusCode.BadRequest) {
+                    description = "Parámetros inválidos o formato de clave incorrecto"
+                    body<ErrorResponse>()
+                }
+                code(HttpStatusCode.Conflict) {
+                    description = "La clave del proyecto ya existe en el workspace"
+                    body<ErrorResponse>()
+                }
+            }
+        }) {
             val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val workspaceId = call.parameters["workspaceId"]!!.toLongOrNull()
                 ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorResponse("workspaceId inválido"))

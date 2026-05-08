@@ -5,6 +5,7 @@ import io.ktor.server.netty.*
 import me.dcueto.zentrackapp.api.configureAuthentication
 import me.dcueto.zentrackapp.api.configureCallLogging
 import me.dcueto.zentrackapp.api.configureCors
+import me.dcueto.zentrackapp.api.configureOpenApi
 import me.dcueto.zentrackapp.api.configureRouting
 import me.dcueto.zentrackapp.api.configureSerialization
 import me.dcueto.zentrackapp.api.configureStatusPages
@@ -23,6 +24,7 @@ fun Application.module() {
     // Serialization primero: StatusPages usa call.respond(ErrorResponse(...)),
     // que necesita ContentNegotiation ya instalado para serializar a JSON.
     configureSerialization()
+    configureOpenApi()
     configureStatusPages()
     configureCors()
     configureCallLogging()
