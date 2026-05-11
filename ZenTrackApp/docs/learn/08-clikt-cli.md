@@ -225,3 +225,79 @@ En .NET, el equivalente sería redirigir `Console.Out` antes de invocar el coman
 ```bash
 ./gradlew :cli:test
 ```
+
+---
+
+## Modo REPL con jline3
+
+ZenTrack CLI es un REPL interactivo (como Claude Code). Al ejecutar `zentrack` sin args, abre un prompt persistente con historial y edición de línea; con args actúa como herramienta one-shot para scripts.
+
+En .NET, esto sería equivalente a `Spectre.Console`'s `AnsiConsole.Prompt` + un bucle `ReadLine()`, pero jline3 añade historial persistente, navegación con flechas y autocompletado.
+
+### Las dos piezas clave
+
+**`ReplSession`** — estado en memoria durante la sesión:
+
+```kotlin
+data class ReplSession(
+    var token: String? = null,
+    var activeWorkspaceName: String? = null,
+    var activeProjectKey: String? = null
+) {
+    fun prompt() = if (activeWorkspaceName != null)
+        "ZenTrack [$activeWorkspaceName] > "
+    else "ZenTrack > "
+}
+```
+
+**jline3** — gestiona el terminal, el historial y el parsing de línea:
+
+```kotlin
+val terminal = TerminalBuilder.builder().system(true).build()
+val reader = LineReaderBuilder.builder()
+    .terminal(terminal)
+    .history(DefaultHistory())
+    .parser(DefaultParser())  // maneja comillas: task create --title "Fix bug"
+    .variable(LineReader.HISTORY_FILE, "~/.zentrack/history")
+    .build()
+
+while (true) {
+    val line = try {
+        reader.readLine(session.prompt())
+    } catch (e: EndOfFileException) { break }   // Ctrl+D → salir
+      catch (e: UserInterruptException) { continue }  // Ctrl+C → nueva línea
+
+    val words = DefaultParser().parse(line, line.length).words()
+    buildRootCommand(session, replMode = true).main(words.toTypedArray())
+}
+```
+
+### Modo dual — REPL vs. script
+
+```kotlin
+fun main(args: Array<String>) {
+    val session = ReplSession()
+    if (args.isNotEmpty()) {
+        buildRootCommand(session).main(args)  // one-shot: System.exit() normal
+        return
+    }
+    // ... REPL loop
+}
+```
+
+### Prevenir System.exit() en el REPL
+
+Cuando Clikt muestra `--help` llama a `exitProcess(0)`, que mataría el proceso REPL. Para evitarlo:
+
+```kotlin
+// IMPORTANTE: importar con alias para evitar conflicto con kotlin.context() de Kotlin 2.3+
+import com.github.ajalt.clikt.core.context as cliktContext
+
+class ZenTrack(replMode: Boolean = false) : CliktCommand(name = "zentrack") {
+    init {
+        if (replMode) this.cliktContext { exitProcess = { _ -> } }
+    }
+}
+```
+
+En .NET `System.CommandLine` esto no es necesario porque la librería no llama a `Environment.Exit()` directamente al mostrar ayuda.

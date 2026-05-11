@@ -42,6 +42,7 @@
 - [x] **[Setup Android]** Módulo `androidApp/` con Compose + Material 3. Dependencia `projects.shared`.
 - [x] **[Config Android]** `ZenTrackTheme`, `MainActivity`, sistema de navegación Compose.
 - [x] **[Setup CLI]** Módulo `cli/` con Clikt. Comandos raíz: `tasks`, `workspaces`, `sprints`.
+- [x] **[CLI REPL]** Rediseñar CLI como sesión interactiva (estilo Claude Code): jline3 para historial y edición de línea, `ReplSession` para estado en memoria (token, workspace/proyecto activo), modo dual (interactivo si no hay args, one-shot si los hay).
 - [x] **[Config Web]** React 19 + TypeScript + Vite operativo. `openapi-typescript` configurado.
 - [x] **[Config Web]** Dependencias: MUI, Zustand. `ThemeProvider` configurado. Estructura `screens/`, `store/`, `services/`, `types/`.
 
@@ -79,7 +80,7 @@
 - [ ] **[Shared]** Añadir DTOs `@Serializable` para respuestas OAuth: `OAuthAccountDto`, `AuthResponseDto` (JWT + refresh token).
 - [ ] **[Frontend]** Añadir botón "Continuar con Google" en `AuthScreen`. Al pulsar, redirige a `GET /api/auth/google`.
 - [ ] **[Frontend]** Gestionar el callback OAuth en la web: leer JWT del redirect, almacenarlo en `useAuthStore` y navegar al panel principal.
-- [ ] **[CLI]** Configurar almacenamiento de credenciales: guardar JWT + refresh token en `~/.zentrack/credentials.json`. Cada comando autenticado lee este fichero y renueva el JWT automáticamente vía `POST /api/auth/refresh` si está expirado.
+- [ ] **[CLI]** Configurar almacenamiento de credenciales: guardar JWT + refresh token en `~/.zentrack/credentials.json`. Al arrancar el REPL, cargar las credenciales en `ReplSession`. Cada comando autenticado usa el token del `ReplSession` y lo renueva automáticamente vía `POST /api/auth/refresh` si está expirado.
 - [ ] **[CLI]** Implementar `zentrack auth login [--email <e>] [--password <p>]`: solicita credenciales interactivamente si no se pasan por flag, llama a `POST /api/auth/login` y persiste las credenciales localmente.
 - [ ] **[CLI]** Implementar `zentrack auth logout`: llama a `POST /api/auth/logout` con el refresh token guardado y elimina `~/.zentrack/credentials.json`.
 - [ ] **[CLI]** Implementar `zentrack auth status`: muestra el email del usuario autenticado y el tiempo restante del JWT.

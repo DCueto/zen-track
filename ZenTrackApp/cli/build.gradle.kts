@@ -15,6 +15,8 @@ dependencies {
     implementation(projects.shared)
     implementation(libs.clikt)
     implementation(libs.koin.core)
+    implementation(libs.jline.reader)
+    implementation(libs.jline.terminal)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.testJunit)
 }
