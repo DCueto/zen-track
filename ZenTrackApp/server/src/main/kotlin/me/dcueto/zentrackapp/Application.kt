@@ -10,6 +10,7 @@ import me.dcueto.zentrackapp.api.configureRouting
 import me.dcueto.zentrackapp.api.configureSerialization
 import me.dcueto.zentrackapp.api.configureStatusPages
 import me.dcueto.zentrackapp.core.AuthService
+import me.dcueto.zentrackapp.core.GoogleOAuthService
 import me.dcueto.zentrackapp.core.JwtService
 import me.dcueto.zentrackapp.core.ProjectService
 import me.dcueto.zentrackapp.core.WorkspaceService
@@ -42,6 +43,10 @@ fun Application.module() {
     val authService = AuthService(UserRepositoryImpl(), jwtService)
     val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
     val projectService = ProjectService(ProjectRepositoryImpl())
+    val googleOAuthService = GoogleOAuthService(
+        clientId = cfg.property("google.clientId").getString(),
+        redirectUri = cfg.property("google.redirectUri").getString()
+    )
 
-    configureRouting(authService, workspaceService, projectService)
+    configureRouting(authService, workspaceService, projectService, googleOAuthService)
 }
