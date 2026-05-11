@@ -79,7 +79,7 @@
 - [x] **[Backend]** Implementar `DELETE /api/users/me/oauth/{id}`: desvincula cuenta OAuth — rechazar si `password_hash` es null (único método de login).
 - [x] **[Shared]** Añadir DTOs `@Serializable` para respuestas OAuth: `OAuthAccountDto`, `AuthResponseDto` (JWT + refresh token).
 - [x] **[Frontend]** Añadir botón "Continuar con Google" en `AuthScreen`. Al pulsar, redirige a `GET /api/auth/google`.
-- [ ] **[Frontend]** Gestionar el callback OAuth en la web: leer JWT del redirect, almacenarlo en `useAuthStore` y navegar al panel principal.
+- [x] **[Frontend]** Gestionar el callback OAuth en la web: leer JWT del redirect, almacenarlo en `useAuthStore` y navegar al panel principal.
 - [x] **[CLI]** Configurar almacenamiento de credenciales: guardar JWT + refresh token en `~/.zentrack/credentials.json`. Al arrancar el REPL, cargar las credenciales en `ReplSession`. Cada comando autenticado usa el token del `ReplSession` y lo renueva automáticamente vía `POST /api/auth/refresh` si está expirado.
 - [ ] **[CLI]** Implementar `zentrack auth login [--email <e>] [--password <p>]`: solicita credenciales interactivamente si no se pasan por flag, llama a `POST /api/auth/login` y persiste las credenciales localmente.
 - [ ] **[CLI]** Implementar `zentrack auth logout`: llama a `POST /api/auth/logout` con el refresh token guardado y elimina `~/.zentrack/credentials.json`.

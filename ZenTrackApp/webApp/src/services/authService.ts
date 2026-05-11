@@ -34,3 +34,12 @@ export async function register(body: RegisterRequest): Promise<AuthResult> {
   });
   return parseAuthResponse(res);
 }
+
+export async function exchangeGoogleCode(body: { code: string; state: string }): Promise<AuthResult> {
+  const res = await fetch(`${BASE_URL}/api/auth/google/exchange`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return parseAuthResponse(res);
+}

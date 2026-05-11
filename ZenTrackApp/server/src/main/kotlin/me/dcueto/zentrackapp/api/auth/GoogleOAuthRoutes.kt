@@ -1,19 +1,22 @@
 package me.dcueto.zentrackapp.api.auth
 
 import io.github.smiley4.ktoropenapi.get
+import io.github.smiley4.ktoropenapi.post
 import io.ktor.http.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import me.dcueto.zentrackapp.api.ErrorResponse
 import me.dcueto.zentrackapp.core.GoogleOAuthService
 import me.dcueto.zentrackapp.dto.AuthResponse
+import me.dcueto.zentrackapp.dto.GoogleExchangeRequest
 
 fun Route.googleOAuthRoutes(googleOAuthService: GoogleOAuthService) {
     route("/api/auth") {
         get("/google", {
             tags("Auth")
             summary = "Iniciar OAuth con Google"
-            description = "Genera un state CSRF, construye la URL de autorización de Google con scope openid email profile y redirige (302)"
+            description = "Genera un state CSRF, construye la URL de autorización de Google con scope openid email profile y redirige (302). El redirectUri apunta al frontend (/auth/callback), que luego llama a POST /api/auth/google/exchange para completar el flujo."
             response {
                 code(HttpStatusCode.Found) {
                     description = "Redirect al authorization endpoint de Google"
@@ -24,13 +27,14 @@ fun Route.googleOAuthRoutes(googleOAuthService: GoogleOAuthService) {
             call.respondRedirect(url, permanent = false)
         }
 
-        get("/google/callback", {
+        post("/google/exchange", {
             tags("Auth")
-            summary = "Callback OAuth de Google"
-            description = "Valida el state CSRF, intercambia el code por tokens en Google, crea o vincula el usuario y emite un JWT de ZenTrack"
+            summary = "Intercambiar code OAuth por JWT"
+            description = "El frontend recibe code y state de Google en /auth/callback y los envía aquí. Valida el state CSRF, intercambia el code por tokens con Google, crea o vincula el usuario y devuelve un JWT de ZenTrack."
             request {
-                queryParameter<String>("code") { description = "Authorization code devuelto por Google" }
-                queryParameter<String>("state") { description = "CSRF state generado en GET /api/auth/google" }
+                body<GoogleExchangeRequest> {
+                    description = "Authorization code y state CSRF recibidos por el frontend desde Google"
+                }
             }
             response {
                 code(HttpStatusCode.OK) {
@@ -38,19 +42,14 @@ fun Route.googleOAuthRoutes(googleOAuthService: GoogleOAuthService) {
                     body<AuthResponse>()
                 }
                 code(HttpStatusCode.BadRequest) {
-                    description = "Parámetro ausente o state inválido/expirado"
+                    description = "State inválido/expirado o error al comunicarse con Google"
                     body<ErrorResponse>()
                 }
             }
         }) {
-            val code = call.request.queryParameters["code"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("Falta el parámetro code"))
-            val state = call.request.queryParameters["state"]
-                ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("Falta el parámetro state"))
-
-            val response = googleOAuthService.handleCallback(code, state)
-                ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("State inválido o expirado"))
-
+            val req = call.receive<GoogleExchangeRequest>()
+            val response = googleOAuthService.handleCallback(req.code, req.state)
+                ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorResponse("State inválido o expirado"))
             call.respond(HttpStatusCode.OK, response)
         }
     }

@@ -15,4 +15,7 @@ data class AuthResponse(val token: String, val refreshToken: String? = null)
 data class RefreshTokenRequest(val refreshToken: String)
 
 @Serializable
+data class GoogleExchangeRequest(val code: String, val state: String)
+
+@Serializable
 data class UserResponse(val id: String, val email: String, val name: String)

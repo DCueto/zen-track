@@ -9,6 +9,7 @@ interface AuthState {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  setTokenFromOAuth: (token: string) => void;
   logout: () => void;
   clearError: () => void;
 }
@@ -38,6 +39,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     } else {
       set({ error: result.error, isLoading: false });
     }
+  },
+
+  setTokenFromOAuth: (token) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    set({ token, error: null });
   },
 
   logout: () => {

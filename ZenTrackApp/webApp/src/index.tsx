@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { lightTheme, darkTheme } from './theme';
 import { AuthScreen } from './screens/AuthScreen';
+import { OAuthCallbackScreen } from './screens/OAuthCallbackScreen';
 import { useAuthStore } from './store/useAuthStore';
 
 function App() {
@@ -12,15 +13,17 @@ function App() {
   const theme = prefersDark ? darkTheme : lightTheme;
   const token = useAuthStore((s) => s.token);
 
+  const screen = () => {
+    if (window.location.pathname === '/auth/callback') return <OAuthCallbackScreen />;
+    if (token == null) return <AuthScreen />;
+    // WorkspaceScreen — siguiente tarea
+    return <div style={{ padding: 32 }}>Workspaces (próximamente)</div>;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {token == null ? (
-        <AuthScreen />
-      ) : (
-        // WorkspaceScreen — siguiente tarea
-        <div style={{ padding: 32 }}>Workspaces (próximamente)</div>
-      )}
+      {screen()}
     </ThemeProvider>
   );
 }
