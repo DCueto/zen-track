@@ -73,7 +73,7 @@
 - [x] **[Backend]** Implementar `GET /api/auth/google/callback`: valida `state`, intercambia `code` por tokens en el Token Endpoint de Google, llama a UserInfo API, crea o vincula usuario en BD, almacena tokens cifrados en `oauth_accounts`, emite JWT interno de ZenTrack.
 - [x] **[Backend]** Implementar `POST /api/auth/refresh`: valida refresh token interno (tabla `refresh_tokens`), emite nuevo JWT.
 - [x] **[Backend]** Implementar `POST /api/auth/logout`: marca el refresh token como revocado en `refresh_tokens`.
-- [ ] **[Backend]** Implementar `GET /api/users/me/oauth`: lista cuentas OAuth vinculadas al usuario autenticado.
+- [x] **[Backend]** Implementar `GET /api/users/me/oauth`: lista cuentas OAuth vinculadas al usuario autenticado.
 - [ ] **[Backend]** Implementar `POST /api/users/me/oauth/google`: vincula cuenta Google a usuario ya autenticado por email/contraseña.
 - [ ] **[Backend]** Implementar `DELETE /api/users/me/oauth/{id}`: desvincula cuenta OAuth — rechazar si `password_hash` es null (único método de login).
 - [ ] **[Shared]** Añadir DTOs `@Serializable` para respuestas OAuth: `OAuthAccountDto`, `AuthResponseDto` (JWT + refresh token).

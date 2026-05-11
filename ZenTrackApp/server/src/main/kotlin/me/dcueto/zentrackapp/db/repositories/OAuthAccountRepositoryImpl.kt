@@ -17,7 +17,8 @@ data class OAuthAccountRecord(
     val userId: Long,
     val provider: String,
     val providerUserId: String,
-    val email: String
+    val email: String,
+    val createdAt: java.time.Instant
 )
 
 class OAuthAccountRepositoryImpl {
@@ -68,11 +69,19 @@ class OAuthAccountRepositoryImpl {
         }
     }
 
+    suspend fun findByUserId(userId: Long): List<OAuthAccountRecord> =
+        newSuspendedTransaction(Dispatchers.IO) {
+            OAuthAccountsTable.selectAll()
+                .where { OAuthAccountsTable.userId eq EntityID(userId, UsersTable) }
+                .map { it.toRecord() }
+        }
+
     private fun ResultRow.toRecord() = OAuthAccountRecord(
         id = this[OAuthAccountsTable.id].value,
         userId = this[OAuthAccountsTable.userId].value,
         provider = this[OAuthAccountsTable.provider],
         providerUserId = this[OAuthAccountsTable.providerUserId],
-        email = this[OAuthAccountsTable.email]
+        email = this[OAuthAccountsTable.email],
+        createdAt = this[OAuthAccountsTable.createdAt]
     )
 }

@@ -14,6 +14,7 @@ import me.dcueto.zentrackapp.core.GoogleOAuthService
 import me.dcueto.zentrackapp.core.JwtService
 import me.dcueto.zentrackapp.core.ProjectService
 import me.dcueto.zentrackapp.core.TokenEncryptionService
+import me.dcueto.zentrackapp.core.UserService
 import me.dcueto.zentrackapp.core.WorkspaceService
 import me.dcueto.zentrackapp.db.DatabaseFactory
 import me.dcueto.zentrackapp.db.repositories.OAuthAccountRepositoryImpl
@@ -46,9 +47,11 @@ fun Application.module() {
 
     val userRepository = UserRepositoryImpl()
     val refreshTokenRepository = RefreshTokenRepositoryImpl()
+    val oAuthAccountRepository = OAuthAccountRepositoryImpl()
     val authService = AuthService(userRepository, jwtService, refreshTokenRepository)
     val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
     val projectService = ProjectService(ProjectRepositoryImpl())
+    val userService = UserService(oAuthAccountRepository)
 
     val googleApiClient = GoogleApiClient(
         clientId = cfg.property("google.clientId").getString(),
@@ -63,10 +66,10 @@ fun Application.module() {
         redirectUri = cfg.property("google.redirectUri").getString(),
         googleApiClient = googleApiClient,
         userRepository = userRepository,
-        oAuthAccountRepository = OAuthAccountRepositoryImpl(),
+        oAuthAccountRepository = oAuthAccountRepository,
         authService = authService,
         tokenEncryptionService = tokenEncryptionService
     )
 
-    configureRouting(authService, workspaceService, projectService, googleOAuthService)
+    configureRouting(authService, workspaceService, projectService, googleOAuthService, userService)
 }
