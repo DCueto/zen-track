@@ -79,6 +79,10 @@
 - [ ] **[Shared]** Añadir DTOs `@Serializable` para respuestas OAuth: `OAuthAccountDto`, `AuthResponseDto` (JWT + refresh token).
 - [ ] **[Frontend]** Añadir botón "Continuar con Google" en `AuthScreen`. Al pulsar, redirige a `GET /api/auth/google`.
 - [ ] **[Frontend]** Gestionar el callback OAuth en la web: leer JWT del redirect, almacenarlo en `useAuthStore` y navegar al panel principal.
+- [ ] **[CLI]** Configurar almacenamiento de credenciales: guardar JWT + refresh token en `~/.zentrack/credentials.json`. Cada comando autenticado lee este fichero y renueva el JWT automáticamente vía `POST /api/auth/refresh` si está expirado.
+- [ ] **[CLI]** Implementar `zentrack auth login [--email <e>] [--password <p>]`: solicita credenciales interactivamente si no se pasan por flag, llama a `POST /api/auth/login` y persiste las credenciales localmente.
+- [ ] **[CLI]** Implementar `zentrack auth logout`: llama a `POST /api/auth/logout` con el refresh token guardado y elimina `~/.zentrack/credentials.json`.
+- [ ] **[CLI]** Implementar `zentrack auth status`: muestra el email del usuario autenticado y el tiempo restante del JWT.
 
 ---
 
@@ -105,6 +109,11 @@
 - [ ] **[Frontend]** Crear pantalla `OrgSwitcherScreen`: selector de organización activa (empresariales + personal). Visible en el panel raíz.
 - [ ] **[Frontend]** Crear pantalla `OrgSettingsScreen`: gestión de miembros y solicitudes pendientes (solo org owner/admin).
 - [ ] **[Frontend]** Crear pantalla `TeamsScreen`: lista de teams de la org activa, crear team, ver miembros.
+- [ ] **[CLI]** Implementar `zentrack orgs list`: muestra nombre, slug y rol del usuario en cada organización. Resalta la org activa (guardada en `~/.zentrack/config.json`).
+- [ ] **[CLI]** Implementar `zentrack orgs use <id|slug>`: guarda la organización activa en `~/.zentrack/config.json` para usarla como contexto por defecto.
+- [ ] **[CLI]** Implementar `zentrack orgs create --name <name> --slug <slug>`: crea nueva organización empresarial.
+- [ ] **[CLI]** Implementar `zentrack teams list [--org <id|slug>]`: lista los teams de la organización activa (o la indicada) con nombre, color y número de miembros.
+- [ ] **[CLI]** Implementar `zentrack teams create --name <name> [--org <id>] [--color <hex>]`: crea un nuevo team en la organización activa.
 
 ---
 
@@ -130,6 +139,8 @@
 - [ ] **[Frontend]** Crear componente de bandeja de solicitudes pendientes (visible para admins/managers de org, team y workspace).
 - [ ] **[Frontend]** Crear pantalla de espera para usuarios `client` recién registrados sin workspace asignado.
 - [ ] **[Frontend]** Añadir opción en `AuthScreen` para registrarse como usuario cliente (`user_type = client`).
+- [ ] **[CLI]** Implementar `zentrack orgs join <slug>`: envía solicitud de membresía a la organización con ese slug. Muestra el estado resultante (`pending`).
+- [ ] **[CLI]** Implementar `zentrack requests list`: muestra las solicitudes de membresía enviadas por el usuario con tipo, destino y estado actual.
 
 ---
 
@@ -153,6 +164,11 @@
 - [ ] **[Frontend]** Crear formulario de creación de Workspace (selección de org + asignación opcional de teams).
 - [ ] **[Frontend]** Crear formulario de creación de Proyecto (con validación del `project_key`).
 - [ ] **[Frontend]** Crear pantalla de gestión de miembros del Workspace (añadir, cambiar rol, revocar).
+- [ ] **[CLI]** Implementar `zentrack workspaces list [--org <id>]`: lista los workspaces accesibles del usuario con nombre e ID. Resalta el workspace activo.
+- [ ] **[CLI]** Implementar `zentrack workspaces use <id|name>`: guarda el workspace activo en `~/.zentrack/config.json` para omitir `--workspace` en comandos posteriores.
+- [ ] **[CLI]** Implementar `zentrack projects list [--workspace <id>]`: lista proyectos del workspace activo con nombre, clave (`project_key`) e ID.
+- [ ] **[CLI]** Implementar `zentrack projects use <id|key>`: guarda el proyecto activo en `~/.zentrack/config.json` para omitir `--project` en comandos de tareas.
+- [ ] **[CLI]** Implementar `zentrack projects create --name <name> --key <KEY> [--workspace <id>]`: crea el proyecto y muestra error claro si la clave ya existe en el workspace.
 
 ---
 
@@ -167,6 +183,10 @@
 - [ ] **[Frontend]** Modal/formulario "Nueva Tarea": título, descripción, prioridad, estimación, asignados, etiquetas.
 - [ ] **[Frontend]** Selector de prefijo GitFlow y previsualización editable del nombre de rama.
 - [ ] **[Frontend]** Opción "Guardar como borrador" (no genera rama Git).
+- [ ] **[CLI]** Implementar `zentrack tasks list [--project <KEY>] [--sprint current|<id>] [--status <name>] [--assignee me|<id>]`: tabla compacta con columnas `ID · Título · Estado · Prioridad · Asignado`. Usa el proyecto/workspace activo si no se especifica.
+- [ ] **[CLI]** Implementar `zentrack tasks create --title <t> [--project <KEY>] [--desc <d>] [--priority low|medium|high|critical] [--estimate <n>] [--draft]`: crea la tarea, imprime el `display_id` generado (ej. `ZTK-26`) y la rama Git. Con `--draft` omite la creación de rama.
+- [ ] **[CLI]** Implementar `zentrack tasks show <DISPLAY_ID>`: muestra detalle completo — título, descripción, estado, prioridad, sprint, asignados, rama Git y subtareas.
+- [ ] **[CLI]** Implementar `zentrack tasks update <DISPLAY_ID> [--status <name>] [--priority <p>] [--sprint <id>] [--title <t>]`: actualiza los campos indicados. Muestra los valores anteriores y los nuevos.
 
 ---
 
@@ -189,3 +209,5 @@
 - [ ] **[Frontend]** Componente "Vista de Lista": tabla compacta con atributos clave de la tarea.
 - [ ] **[Frontend]** Selector de contexto en barra superior: Global / Sprint / Proyecto.
 - [ ] **[Frontend]** Controles de filtrado y ordenación por cualquier atributo de la tarea.
+- [ ] **[CLI]** Ampliar `zentrack tasks list` con flag `--output json|table` (defecto: `table` con colores ANSI) para integración con otras herramientas (ej. `zentrack tasks list --output json | jq '.[] | .id'`).
+- [ ] **[CLI]** Ampliar `zentrack tasks list` con `--sort priority|status|created` para ordenar resultados desde la CLI sin depender del orden del servidor.
