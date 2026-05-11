@@ -5,6 +5,8 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.context as cliktContext
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
+import me.dcueto.zentrackapp.cli.commands.AuthCommands
+import me.dcueto.zentrackapp.cli.commands.AuthLoginCommand
 import me.dcueto.zentrackapp.cli.commands.SprintCommands
 import me.dcueto.zentrackapp.cli.commands.SprintCreateCommand
 import me.dcueto.zentrackapp.cli.commands.SprintListCommand
@@ -36,6 +38,9 @@ class ZenTrack(replMode: Boolean = false) : CliktCommand(name = "zentrack") {
 
 fun buildRootCommand(session: ReplSession, replMode: Boolean = false): CliktCommand =
     ZenTrack(replMode).subcommands(
+        AuthCommands().subcommands(
+            AuthLoginCommand(session)
+        ),
         TaskCommands().subcommands(
             TaskListCommand(),
             TaskCreateCommand(),
