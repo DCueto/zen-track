@@ -9,6 +9,7 @@ import me.dcueto.zentrackapp.api.ErrorResponse
 import me.dcueto.zentrackapp.core.AuthService
 import me.dcueto.zentrackapp.dto.AuthResponse
 import me.dcueto.zentrackapp.dto.LoginRequest
+import me.dcueto.zentrackapp.dto.RefreshTokenRequest
 import me.dcueto.zentrackapp.dto.RegisterRequest
 
 fun Route.authRoutes(authService: AuthService) {
@@ -16,7 +17,7 @@ fun Route.authRoutes(authService: AuthService) {
         post("/register", {
             tags("Auth")
             summary = "Registrar usuario"
-            description = "Crea un nuevo usuario y devuelve un JWT válido"
+            description = "Crea un nuevo usuario y devuelve un JWT + refresh token"
             request {
                 body<RegisterRequest> {
                     description = "Credenciales del nuevo usuario"
@@ -42,14 +43,14 @@ fun Route.authRoutes(authService: AuthService) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("email, password y name son requeridos"))
                 return@post
             }
-            val token = authService.register(req.email, req.password, req.name)
-            call.respond(HttpStatusCode.Created, AuthResponse(token = token))
+            val response = authService.register(req.email, req.password, req.name)
+            call.respond(HttpStatusCode.Created, response)
         }
 
         post("/login", {
             tags("Auth")
             summary = "Autenticar usuario"
-            description = "Verifica las credenciales y devuelve un JWT"
+            description = "Verifica las credenciales y devuelve un JWT + refresh token"
             request {
                 body<LoginRequest> {
                     description = "Email y contraseña"
@@ -67,9 +68,35 @@ fun Route.authRoutes(authService: AuthService) {
             }
         }) {
             val req = call.receive<LoginRequest>()
-            val token = authService.login(req.email, req.password)
+            val response = authService.login(req.email, req.password)
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Credenciales incorrectas"))
-            call.respond(HttpStatusCode.OK, AuthResponse(token = token))
+            call.respond(HttpStatusCode.OK, response)
+        }
+
+        post("/refresh", {
+            tags("Auth")
+            summary = "Renovar JWT con refresh token"
+            description = "Valida el refresh token interno, lo revoca (rotación) y emite un nuevo JWT + nuevo refresh token"
+            request {
+                body<RefreshTokenRequest> {
+                    description = "Refresh token obtenido en login u OAuth callback"
+                }
+            }
+            response {
+                code(HttpStatusCode.OK) {
+                    description = "Token renovado"
+                    body<AuthResponse>()
+                }
+                code(HttpStatusCode.Unauthorized) {
+                    description = "Refresh token inválido, expirado o revocado"
+                    body<ErrorResponse>()
+                }
+            }
+        }) {
+            val req = call.receive<RefreshTokenRequest>()
+            val response = authService.refresh(req.refreshToken)
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Refresh token inválido o expirado"))
+            call.respond(HttpStatusCode.OK, response)
         }
     }
 }

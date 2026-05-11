@@ -386,3 +386,56 @@ La autenticación está completamente implementada:
 | `User.FindFirst("claim")` | `principal?.payload?.getClaim("claim")` | Leer un claim |
 | `IssuerSigningKey` (HMAC256) | `Algorithm.HMAC256(secret)` | Algoritmo de firma |
 | `options.Challenge` / `OnChallenge` | `challenge { }` block | Respuesta 401 personalizada |
+
+---
+
+## Refresh Tokens — rotación con SHA-256
+
+En ASP.NET Core los refresh tokens se gestionan normalmente con `AddAuthentication().AddJwtBearer()` + un store personalizado o con ASP.NET Core Identity. El concepto en Ktor es idéntico pero implementado a mano.
+
+### Patrón de rotación (Refresh Token Rotation)
+
+Cada vez que el cliente usa un refresh token, el servidor lo **revoca** e inmediatamente emite uno nuevo. Si alguien roba el refresh token y lo usa, el propietario legítimo recibirá un 401 al intentar renovar, lo que indica una brecha.
+
+```
+POST /api/auth/refresh  { refreshToken: "abc123..." }
+   ↓
+1. SHA-256(rawToken) → hash
+2. SELECT * FROM refresh_tokens WHERE token_hash = hash
+3. Validar: not null, not revoked, not expired
+4. UPDATE refresh_tokens SET revoked_at = NOW()    ← invalida el anterior
+5. INSERT INTO refresh_tokens (new_hash, expires_at)
+6. Responder: { token: "newJwt", refreshToken: "newRawToken" }
+```
+
+### Por qué se guarda el hash, no el token en claro
+
+Igual que con contraseñas: si la BD se compromete, el atacante no puede usar los hashes directamente. SHA-256 es suficiente porque los tokens son largos (256 bits de entropía) y aleatorios — no hay ataques de diccionario viables.
+
+```kotlin
+// core/AuthService.kt — generación y hash
+private fun generateRawToken(): String {
+    val bytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)  // 43 chars, URL-safe
+}
+
+private fun hashToken(token: String): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    return digest.digest(token.toByteArray()).joinToString("") { "%02x".format(it) }  // 64 hex chars
+}
+```
+
+El `token_hash` en BD es `VARCHAR(64)` — exactamente el tamaño de un SHA-256 en hex.
+
+### `issueTokenPair` — reutilizado por login, register y OAuth callback
+
+```kotlin
+suspend fun issueTokenPair(userId: Long): AuthResponse {
+    val jwt = jwtService.generateToken(userId)
+    val rawToken = generateRawToken()
+    refreshTokenRepository.create(userId, hashToken(rawToken), expiresAt = Instant.now().plusSeconds(30 * 86400L))
+    return AuthResponse(token = jwt, refreshToken = rawToken)
+}
+```
+
+La misma función sirve para registro, login por email y login OAuth. Esto garantiza que todos los flujos emitan el mismo par JWT + refresh token.

@@ -2,6 +2,7 @@ package me.dcueto.zentrackapp.core
 
 import me.dcueto.zentrackapp.db.repositories.OAuthAccountRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
+import me.dcueto.zentrackapp.dto.AuthResponse
 import me.dcueto.zentrackapp.integrations.google.GoogleApiClient
 import java.net.URLEncoder
 import java.time.Instant
@@ -17,7 +18,7 @@ class GoogleOAuthService(
     private val googleApiClient: GoogleApiClient,
     private val userRepository: UserRepositoryImpl,
     private val oAuthAccountRepository: OAuthAccountRepositoryImpl,
-    private val jwtService: JwtService,
+    private val authService: AuthService,
     private val tokenEncryptionService: TokenEncryptionService
 ) {
     private val pendingStates = ConcurrentHashMap<String, Instant>()
@@ -42,7 +43,7 @@ class GoogleOAuthService(
         return Instant.now().isBefore(expiry)
     }
 
-    suspend fun handleCallback(code: String, state: String): String? {
+    suspend fun handleCallback(code: String, state: String): AuthResponse? {
         if (!validateAndConsumeState(state)) return null
 
         val tokenResponse = googleApiClient.exchangeCodeForTokens(code)
@@ -64,7 +65,7 @@ class GoogleOAuthService(
             tokenExpiresAt = Instant.now().plusSeconds(tokenResponse.expiresIn.toLong())
         )
 
-        return jwtService.generateToken(userId = user.id)
+        return authService.issueTokenPair(user.id)
     }
 
     private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")

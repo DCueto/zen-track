@@ -48,10 +48,10 @@ fun Route.googleOAuthRoutes(googleOAuthService: GoogleOAuthService) {
             val state = call.request.queryParameters["state"]
                 ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("Falta el parámetro state"))
 
-            val token = googleOAuthService.handleCallback(code, state)
+            val response = googleOAuthService.handleCallback(code, state)
                 ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("State inválido o expirado"))
 
-            call.respond(HttpStatusCode.OK, AuthResponse(token = token))
+            call.respond(HttpStatusCode.OK, response)
         }
     }
 }

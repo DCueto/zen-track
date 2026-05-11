@@ -18,6 +18,7 @@ import me.dcueto.zentrackapp.core.WorkspaceService
 import me.dcueto.zentrackapp.db.DatabaseFactory
 import me.dcueto.zentrackapp.db.repositories.OAuthAccountRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.ProjectRepositoryImpl
+import me.dcueto.zentrackapp.db.repositories.RefreshTokenRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
 import me.dcueto.zentrackapp.db.repositories.WorkspaceRepositoryImpl
 import me.dcueto.zentrackapp.integrations.google.GoogleApiClient
@@ -44,7 +45,8 @@ fun Application.module() {
     )
 
     val userRepository = UserRepositoryImpl()
-    val authService = AuthService(userRepository, jwtService)
+    val refreshTokenRepository = RefreshTokenRepositoryImpl()
+    val authService = AuthService(userRepository, jwtService, refreshTokenRepository)
     val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
     val projectService = ProjectService(ProjectRepositoryImpl())
 
@@ -62,7 +64,7 @@ fun Application.module() {
         googleApiClient = googleApiClient,
         userRepository = userRepository,
         oAuthAccountRepository = OAuthAccountRepositoryImpl(),
-        jwtService = jwtService,
+        authService = authService,
         tokenEncryptionService = tokenEncryptionService
     )
 
