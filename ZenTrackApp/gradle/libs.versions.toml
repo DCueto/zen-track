@@ -19,6 +19,7 @@ exposed = "0.61.0"
 flyway = "10.15.0"
 hikaricp = "6.3.0"
 bcrypt = "0.10.2"
+tink = "1.14.1"
 smiley4 = "5.4.0"
 navigation-compose = "2.8.5"
 
@@ -72,6 +73,7 @@ hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
 smiley4-ktorOpenapi = { module = "io.github.smiley4:ktor-openapi", version.ref = "smiley4" }
 smiley4-swaggerUi = { module = "io.github.smiley4:ktor-swagger-ui", version.ref = "smiley4" }
 
