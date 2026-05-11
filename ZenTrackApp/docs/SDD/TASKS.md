@@ -53,7 +53,7 @@
 
 - [x] **[Backend]** Eliminar todas las migraciones Flyway existentes (`server/src/main/resources/db/migration/V001` … `V006`).
 - [x] **[Infra]** Reset completo de la BD del contenedor: `docker compose down -v && docker compose up -d`.
-- [ ] **[Backend]** Crear `V001__create_users_and_auth.sql`: tablas `users` (password_hash nullable, avatar_url, user_type), `oauth_accounts` (provider, provider_user_id, tokens cifrados), `refresh_tokens`. Todas con columnas de auditoría (`created_at`, `created_by`, `updated_at`, `updated_by`).
+- [x] **[Backend]** Crear `V001__create_users_and_auth.sql`: tablas `users` (password_hash nullable, avatar_url, user_type), `oauth_accounts` (provider, provider_user_id, tokens cifrados), `refresh_tokens`. Todas con columnas de auditoría (`created_at`, `created_by`, `updated_at`, `updated_by`).
 - [ ] **[Backend]** Crear `V002__create_organizations.sql`: tablas `organizations` (name, slug UNIQUE, plan, is_personal) y `organization_members` (role ENUM owner/admin/member). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V003__create_teams.sql`: tablas `teams` (org_id, name, color_hex) y `team_members` (role ENUM admin/manager/member). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V004__create_workspaces.sql`: tablas `workspaces` (org_id), `workspace_teams` (N:M) y `workspace_members` (role ENUM admin/manager/member/client). Con columnas de auditoría.
