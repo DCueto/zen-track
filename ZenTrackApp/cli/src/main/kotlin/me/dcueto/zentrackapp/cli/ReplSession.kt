@@ -5,7 +5,8 @@ data class ReplSession(
     var refreshToken: String? = null,
     var userEmail: String? = null,
     var activeWorkspaceName: String? = null,
-    var activeProjectKey: String? = null
+    var activeProjectKey: String? = null,
+    val apiUrl: String = System.getenv("ZENTRACK_API_URL") ?: "http://localhost:8080"
 ) {
     val isAuthenticated: Boolean get() = token != null
 

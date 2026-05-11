@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlinJvm)
+    alias(libs.plugins.kotlinSerialization)
     application
 }
 
@@ -17,6 +18,9 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.jline.reader)
     implementation(libs.jline.terminal)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.ktor.clientCore)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlin.testJunit)
 }

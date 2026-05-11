@@ -285,6 +285,69 @@ fun main(args: Array<String>) {
 }
 ```
 
+---
+
+## Almacenamiento de credenciales — `CredentialStore` y `TokenManager`
+
+ZenTrack CLI persiste el JWT y el refresh token en `~/.zentrack/credentials.json`. Al arrancar, los carga en `ReplSession`; durante la sesión, el token vive en memoria.
+
+### CredentialStore — I/O de fichero con `kotlinx.serialization`
+
+```kotlin
+@Serializable
+data class PersistedCredentials(val token: String, val refreshToken: String, val email: String)
+
+object CredentialStore {
+    private val file = File(System.getProperty("user.home"), ".zentrack/credentials.json")
+
+    fun save(credentials: PersistedCredentials) {
+        file.parentFile.mkdirs()
+        file.writeText(Json.encodeToString(credentials))
+    }
+
+    fun load(): PersistedCredentials? = runCatching {
+        Json { ignoreUnknownKeys = true }.decodeFromString<PersistedCredentials>(file.readText())
+    }.getOrNull()
+
+    fun clear() { file.delete() }
+}
+```
+
+En .NET esto sería `JsonSerializer.Serialize` / `JsonSerializer.Deserialize` con `File.WriteAllText` / `File.ReadAllText`. El patrón `runCatching { }.getOrNull()` es el equivalente al `try { } catch { return null; }` en C#.
+
+### TokenManager — verificar expiración y renovar
+
+Los JWTs son `header.payload.signature` en Base64URL. El campo `exp` del payload es un timestamp Unix en segundos. Sin librería JWT:
+
+```kotlin
+fun isExpired(token: String): Boolean = try {
+    val padding = "=".repeat((4 - token.split(".")[1].length % 4) % 4)
+    val payload = Base64.getUrlDecoder().decode(token.split(".")[1] + padding)
+    val exp = Json.parseToJsonElement(String(payload)).jsonObject["exp"]?.jsonPrimitive?.longOrNull ?: return true
+    System.currentTimeMillis() / 1000 >= exp - 30  // 30s buffer
+} catch (e: Exception) { true }
+```
+
+Si está expirado, `TokenManager.refreshIfNeeded(session)` llama a `POST /api/auth/refresh` con el refresh token y actualiza `ReplSession` + `CredentialStore`. Usa `runBlocking { client.post(...).body<AuthResponse>() }` para hacer la llamada asíncrona de Ktor en contexto síncrono del CLI.
+
+En .NET, el equivalente sería usar `JwtSecurityTokenHandler` para el parsing y `HttpClient.PostAsJsonAsync` con `.GetAwaiter().GetResult()` para la llamada blocking.
+
+### Carga al arrancar
+
+```kotlin
+fun main(args: Array<String>) {
+    val session = ReplSession()
+    CredentialStore.load()?.let { creds ->
+        session.token = creds.token
+        session.refreshToken = creds.refreshToken
+        session.userEmail = creds.email
+    }
+    // ... resto del REPL
+}
+```
+
+---
+
 ### Prevenir System.exit() en el REPL
 
 Cuando Clikt muestra `--help` llama a `exitProcess(0)`, que mataría el proceso REPL. Para evitarlo:

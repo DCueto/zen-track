@@ -48,8 +48,9 @@ koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = 
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
 jline-reader = { module = "org.jline:jline-reader", version.ref = "jline" }
 jline-terminal = { module = "org.jline:jline-terminal", version.ref = "jline" }
-# Serialization
+# Serialization / Coroutines
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 # Ktor Client (KMP — sin sufijo -jvm)
 ktor-clientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-clientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }

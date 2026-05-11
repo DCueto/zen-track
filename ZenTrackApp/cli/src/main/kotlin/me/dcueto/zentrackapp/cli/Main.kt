@@ -54,6 +54,13 @@ fun buildRootCommand(session: ReplSession, replMode: Boolean = false): CliktComm
 fun main(args: Array<String>) {
     val session = ReplSession()
 
+    // Load persisted credentials into session (token validation/refresh happens per-command)
+    CredentialStore.load()?.let { creds ->
+        session.token = creds.token
+        session.refreshToken = creds.refreshToken
+        session.userEmail = creds.email
+    }
+
     // One-shot / script mode: zentrack <command> [args...]
     if (args.isNotEmpty()) {
         buildRootCommand(session).main(args)

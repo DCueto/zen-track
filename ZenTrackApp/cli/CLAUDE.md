@@ -13,7 +13,9 @@ Clikt declara los comandos de forma declarativa con propiedades delegadas; mezcl
 ```
 src/main/kotlin/me/dcueto/zentrackapp/cli/
 ├── Main.kt              → Entry point: REPL loop (jline3) + buildRootCommand factory
-├── ReplSession.kt       → Estado de sesión en memoria: token, workspace/proyecto activo, prompt dinámico
+├── ReplSession.kt       → Estado de sesión en memoria: token, workspace/proyecto activo, apiUrl, prompt dinámico
+├── CredentialStore.kt   → Persistencia de credenciales en ~/.zentrack/credentials.json (PersistedCredentials @Serializable)
+├── TokenManager.kt      → Verificación de expiración JWT + renovación automática vía POST /api/auth/refresh
 ├── commands/            → Un archivo por dominio
 │   ├── TaskCommands.kt  → task list, task create, task move, task show
 │   ├── WorkspaceCommands.kt
@@ -116,10 +118,28 @@ Los comandos leen y escriben `session` para cambiar contexto (workspace activo, 
 
 ### Autenticación y Configuración
 
-- Al arrancar el REPL, se carga `~/.zentrack/credentials.json` en `ReplSession`. Durante la sesión, el token vive en memoria — no se relee el fichero en cada comando.
-- La URL del servidor se lee de `~/.zentrack/config.json` o de la variable de entorno `ZENTRACK_API_URL`.
+- Al arrancar el REPL, `Main.kt` llama a `CredentialStore.load()` y popula `ReplSession` con el token, refresh token y email. Durante la sesión, el token vive en memoria — no se relee el fichero en cada comando.
+- La URL del servidor se lee de la variable de entorno `ZENTRACK_API_URL` o `http://localhost:8080` por defecto. Está en `ReplSession.apiUrl`.
+- Los comandos que hacen llamadas HTTP autenticadas deben llamar `TokenManager.refreshIfNeeded(session)` **antes** de la petición. Si devuelve `false`, el token no pudo renovarse — mostrar mensaje de re-login.
 - **NUNCA** se pasan tokens como flags en cada comando ni como argumentos posicionales.
 - **PROHIBIDO** guardar el token en `~/.bash_history`.
+
+```kotlin
+// Patrón de comando autenticado
+override fun run() {
+    if (!session.isAuthenticated) {
+        echo("No autenticado. Ejecuta 'auth login'.", err = true)
+        currentContext.exit(1)
+        return
+    }
+    if (!TokenManager.refreshIfNeeded(session)) {
+        echo("Sesión expirada. Ejecuta 'auth login'.", err = true)
+        currentContext.exit(1)
+        return
+    }
+    // ... llamada HTTP usando session.token
+}
+```
 
 ### Compilación y distribución
 
