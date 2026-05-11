@@ -68,7 +68,7 @@
 ## Fase 3: Autenticación — OAuth 2.0 Google
 
 - [x] **[Backend]** Añadir dependencias en `libs.versions.toml`: cliente HTTP para intercambio de tokens OAuth (Ktor Client o `ktor-client-apache`). Añadir librería de cifrado AES-256 para tokens de Google.
-- [ ] **[Backend]** Configurar las credenciales de Google OAuth en `application.conf`: `google.clientId`, `google.clientSecret`, `google.redirectUri` (excluidos de git).
+- [x] **[Backend]** Configurar las credenciales de Google OAuth en `application.conf`: `google.clientId`, `google.clientSecret`, `google.redirectUri` (excluidos de git).
 - [ ] **[Backend]** Implementar `GET /api/auth/google`: genera `state` UUID, construye la URL de autorización de Google con scope `openid email profile` y redirige (302).
 - [ ] **[Backend]** Implementar `GET /api/auth/google/callback`: valida `state`, intercambia `code` por tokens en el Token Endpoint de Google, llama a UserInfo API, crea o vincula usuario en BD, almacena tokens cifrados en `oauth_accounts`, emite JWT interno de ZenTrack.
 - [ ] **[Backend]** Implementar `POST /api/auth/refresh`: valida refresh token interno (tabla `refresh_tokens`), emite nuevo JWT.
