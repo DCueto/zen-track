@@ -7,6 +7,7 @@
 1. **Una tarea a la vez.** Implementar una única tarea, esperar validación del usuario y no avanzar a la siguiente hasta recibir confirmación.
 2. **Sin commits autónomos.** Solo commitear y pushear cuando el usuario indique explícitamente que la tarea está completada.
 3. **Sin borrar tareas `[x]`.** Las tareas completadas son histórico permanente. Las nuevas pendientes derivadas de cambios se añaden como `[ ]` por debajo.
+4. **Marcar `[x]` al commitear.** Cada vez que se commitea una tarea completada, se actualiza su `[ ]` a `[x]` en este documento en el mismo commit.
 
 ---
 
@@ -50,8 +51,8 @@
 
 > No hay datos en producción. Se eliminan las migraciones v1 (V001–V006) y se recrea el esquema completo desde cero con el diseño v2.
 
-- [ ] **[Backend]** Eliminar todas las migraciones Flyway existentes (`server/src/main/resources/db/migration/V001` … `V006`).
-- [ ] **[Infra]** Reset completo de la BD del contenedor: `docker compose down -v && docker compose up -d`.
+- [x] **[Backend]** Eliminar todas las migraciones Flyway existentes (`server/src/main/resources/db/migration/V001` … `V006`).
+- [x] **[Infra]** Reset completo de la BD del contenedor: `docker compose down -v && docker compose up -d`.
 - [ ] **[Backend]** Crear `V001__create_users_and_auth.sql`: tablas `users` (password_hash nullable, avatar_url, user_type), `oauth_accounts` (provider, provider_user_id, tokens cifrados), `refresh_tokens`. Todas con columnas de auditoría (`created_at`, `created_by`, `updated_at`, `updated_by`).
 - [ ] **[Backend]** Crear `V002__create_organizations.sql`: tablas `organizations` (name, slug UNIQUE, plan, is_personal) y `organization_members` (role ENUM owner/admin/member). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V003__create_teams.sql`: tablas `teams` (org_id, name, color_hex) y `team_members` (role ENUM admin/manager/member). Con columnas de auditoría.
