@@ -4,8 +4,13 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object UsersTable : LongIdTable("users") {
-    val email        = text("email")
-    val passwordHash = text("password_hash")
-    val name         = text("name")
+    val email        = varchar("email", 255)
+    val passwordHash = varchar("password_hash", 255).nullable()
+    val name         = varchar("name", 255)
+    val avatarUrl    = varchar("avatar_url", 500).nullable()
+    val userType     = varchar("user_type", 50)
     val createdAt    = timestamp("created_at")
+    val createdBy    = reference("created_by", UsersTable).nullable()
+    val updatedAt    = timestamp("updated_at")
+    val updatedBy    = reference("updated_by", UsersTable).nullable()
 }

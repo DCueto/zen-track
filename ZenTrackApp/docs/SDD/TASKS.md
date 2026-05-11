@@ -61,7 +61,7 @@
 - [x] **[Backend]** Crear `V006__create_membership_requests.sql`: tabla `membership_requests` (requester_id, target_type ENUM organization/team/workspace, target_id, status ENUM pending/approved/rejected, reviewed_by, reviewed_at). Con columnas de auditoría.
 - [x] **[Backend]** Crear `V007__create_agile_entities.sql`: tablas `sprints`, `tags`, `task_statuses`. Con columnas de auditoría.
 - [x] **[Backend]** Crear `V008__create_tasks.sql`: tablas `tasks` (con todos los campos incluido git_branch_name), `task_assignees`, `task_tags`. Con columnas de auditoría en `tasks`; `task_assignees` y `task_tags` con `created_at` y `created_by`.
-- [ ] **[Backend]** Reescribir todas las tablas Exposed desde cero en `db/tables/` para reflejar el esquema v2: `UsersTable`, `OAuthAccountsTable`, `RefreshTokensTable`, `OrganizationsTable`, `OrganizationMembersTable`, `TeamsTable`, `TeamMembersTable`, `WorkspacesTable`, `WorkspaceTeamsTable`, `WorkspaceMembersTable`, `ProjectsTable`, `ProjectMembersTable`, `MembershipRequestsTable`, `SprintsTable`, `TagsTable`, `TaskStatusesTable`, `TasksTable`, `TaskAssigneesTable`, `TaskTagsTable`.
+- [x] **[Backend]** Reescribir todas las tablas Exposed desde cero en `db/tables/` para reflejar el esquema v2: `UsersTable`, `OAuthAccountsTable`, `RefreshTokensTable`, `OrganizationsTable`, `OrganizationMembersTable`, `TeamsTable`, `TeamMembersTable`, `WorkspacesTable`, `WorkspaceTeamsTable`, `WorkspaceMembersTable`, `ProjectsTable`, `ProjectMembersTable`, `MembershipRequestsTable`, `SprintsTable`, `TagsTable`, `TaskStatusesTable`, `TasksTable`, `TaskAssigneesTable`, `TaskTagsTable`.
 
 ---
 
