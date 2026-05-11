@@ -98,5 +98,25 @@ fun Route.authRoutes(authService: AuthService) {
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Refresh token inválido o expirado"))
             call.respond(HttpStatusCode.OK, response)
         }
+
+        post("/logout", {
+            tags("Auth")
+            summary = "Cerrar sesión"
+            description = "Revoca el refresh token. Idempotente: devuelve 204 aunque el token no exista o ya estuviera revocado"
+            request {
+                body<RefreshTokenRequest> {
+                    description = "Refresh token a revocar"
+                }
+            }
+            response {
+                code(HttpStatusCode.NoContent) {
+                    description = "Sesión cerrada"
+                }
+            }
+        }) {
+            val req = call.receive<RefreshTokenRequest>()
+            authService.logout(req.refreshToken)
+            call.respond(HttpStatusCode.NoContent)
+        }
     }
 }

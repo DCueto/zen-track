@@ -40,6 +40,12 @@ class AuthService(
         return issueTokenPair(record.userId)
     }
 
+    suspend fun logout(rawRefreshToken: String) {
+        val hash = hashToken(rawRefreshToken)
+        val record = refreshTokenRepository.findByTokenHash(hash) ?: return
+        if (record.revokedAt == null) refreshTokenRepository.revoke(record.id)
+    }
+
     suspend fun issueTokenPair(userId: Long): AuthResponse {
         val jwt = jwtService.generateToken(userId)
         val rawToken = generateRawToken()
