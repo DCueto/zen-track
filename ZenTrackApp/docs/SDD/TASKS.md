@@ -75,7 +75,7 @@
 - [x] **[Backend]** Implementar `POST /api/auth/refresh`: valida refresh token interno (tabla `refresh_tokens`), emite nuevo JWT.
 - [x] **[Backend]** Implementar `POST /api/auth/logout`: marca el refresh token como revocado en `refresh_tokens`.
 - [x] **[Backend]** Implementar `GET /api/users/me/oauth`: lista cuentas OAuth vinculadas al usuario autenticado.
-- [ ] **[Backend]** Implementar `POST /api/users/me/oauth/google`: vincula cuenta Google a usuario ya autenticado por email/contraseña.
+- [x] **[Backend]** Implementar `POST /api/users/me/oauth/google`: vincula cuenta Google a usuario ya autenticado por email/contraseña.
 - [ ] **[Backend]** Implementar `DELETE /api/users/me/oauth/{id}`: desvincula cuenta OAuth — rechazar si `password_hash` es null (único método de login).
 - [ ] **[Shared]** Añadir DTOs `@Serializable` para respuestas OAuth: `OAuthAccountDto`, `AuthResponseDto` (JWT + refresh token).
 - [ ] **[Frontend]** Añadir botón "Continuar con Google" en `AuthScreen`. Al pulsar, redirige a `GET /api/auth/google`.

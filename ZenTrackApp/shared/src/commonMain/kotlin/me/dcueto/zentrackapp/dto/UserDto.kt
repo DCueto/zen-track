@@ -9,3 +9,6 @@ data class OAuthAccountResponse(
     val email: String,
     val createdAt: String
 )
+
+@Serializable
+data class LinkGoogleAccountRequest(val code: String)

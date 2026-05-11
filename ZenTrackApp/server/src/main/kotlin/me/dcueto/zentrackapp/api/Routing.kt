@@ -27,7 +27,7 @@ fun Application.configureRouting(authService: AuthService, workspaceService: Wor
         authenticate("jwt") {
             workspaceRoutes(workspaceService)
             projectRoutes(projectService)
-            userRoutes(userService)
+            userRoutes(userService, googleOAuthService)
         }
     }
 }

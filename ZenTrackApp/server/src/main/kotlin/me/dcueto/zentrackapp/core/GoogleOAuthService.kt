@@ -12,6 +12,12 @@ import java.util.concurrent.ConcurrentHashMap
 private const val GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 private const val STATE_TTL_SECONDS = 600L
 
+sealed class LinkResult {
+    object Success : LinkResult()
+    object AlreadyLinkedToOtherUser : LinkResult()
+    object OAuthError : LinkResult()
+}
+
 class GoogleOAuthService(
     private val clientId: String,
     private val redirectUri: String,
@@ -66,6 +72,33 @@ class GoogleOAuthService(
         )
 
         return authService.issueTokenPair(user.id)
+    }
+
+    suspend fun linkAccount(userId: Long, code: String): LinkResult {
+        val tokenResponse = try {
+            googleApiClient.exchangeCodeForTokens(code)
+        } catch (e: Exception) {
+            return LinkResult.OAuthError
+        }
+        val userInfo = try {
+            googleApiClient.getUserInfo(tokenResponse.accessToken)
+        } catch (e: Exception) {
+            return LinkResult.OAuthError
+        }
+
+        val existing = oAuthAccountRepository.findByProviderAndProviderUserId("google", userInfo.sub)
+        if (existing != null && existing.userId != userId) return LinkResult.AlreadyLinkedToOtherUser
+
+        oAuthAccountRepository.upsert(
+            userId = userId,
+            provider = "google",
+            providerUserId = userInfo.sub,
+            email = userInfo.email,
+            encryptedAccessToken = tokenEncryptionService.encrypt(tokenResponse.accessToken),
+            encryptedRefreshToken = tokenResponse.refreshToken?.let { tokenEncryptionService.encrypt(it) },
+            tokenExpiresAt = Instant.now().plusSeconds(tokenResponse.expiresIn.toLong())
+        )
+        return LinkResult.Success
     }
 
     private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")

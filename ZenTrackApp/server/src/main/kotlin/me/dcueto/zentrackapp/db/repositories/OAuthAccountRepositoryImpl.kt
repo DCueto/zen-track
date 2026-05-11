@@ -76,6 +76,17 @@ class OAuthAccountRepositoryImpl {
                 .map { it.toRecord() }
         }
 
+    suspend fun findByProviderAndProviderUserId(provider: String, providerUserId: String): OAuthAccountRecord? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            OAuthAccountsTable.selectAll()
+                .where {
+                    (OAuthAccountsTable.provider eq provider) and
+                    (OAuthAccountsTable.providerUserId eq providerUserId)
+                }
+                .singleOrNull()
+                ?.toRecord()
+        }
+
     private fun ResultRow.toRecord() = OAuthAccountRecord(
         id = this[OAuthAccountsTable.id].value,
         userId = this[OAuthAccountsTable.userId].value,
