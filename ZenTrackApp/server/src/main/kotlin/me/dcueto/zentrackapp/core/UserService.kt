@@ -10,6 +10,7 @@ sealed class UnlinkResult {
     object LastLoginMethod : UnlinkResult()
 }
 
+
 class UserService(
     private val oAuthAccountRepository: OAuthAccountRepositoryImpl,
     private val userRepository: UserRepositoryImpl
