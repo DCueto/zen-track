@@ -2,6 +2,12 @@
 
 > Versión del plan: v2 — alineada con `FUNCTIONAL_DESIGN_v2.md`
 
+## Reglas de trabajo
+
+1. **Una tarea a la vez.** Implementar una única tarea, esperar validación del usuario y no avanzar a la siguiente hasta recibir confirmación.
+2. **Sin commits autónomos.** Solo commitear y pushear cuando el usuario indique explícitamente que la tarea está completada.
+3. **Sin borrar tareas `[x]`.** Las tareas completadas son histórico permanente. Las nuevas pendientes derivadas de cambios se añaden como `[ ]` por debajo.
+
 ---
 
 ## Fase 1: Setup / Fundacional ✅
