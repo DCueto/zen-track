@@ -3,24 +3,21 @@
 
 ## 1. Arquitectura de Alto Nivel
 
-ZenTrack utilizará una arquitectura cliente-servidor basada en el ecosistema Kotlin:
+ZenTrack utiliza una arquitectura cliente-servidor basada en el ecosistema Kotlin:
 
-- **Backend (Ktor):** API RESTful expuesta con Ktor, encargada de la lógica de negocio, integración con las APIs de GitLab/GitHub, y autenticación (JWT).
-    
-- **Base de Datos (PostgreSQL):** Base de datos relacional para persistir Workspaces, Proyectos, Sprints, Tareas y Usuarios. Se comunicará con Ktor mediante el ORM Exposed o Ktorm.
-    
+- **Backend (Ktor):** API RESTful con Ktor, encargada de la lógica de negocio, integración con las APIs de GitLab/GitHub, autenticación JWT + OAuth 2.0 Google.
+
+- **Base de Datos (PostgreSQL):** Base de datos relacional para persistir todas las entidades. Se comunica con Ktor mediante el ORM Exposed + HikariCP.
+
 - **Shared / Core (KMP):** Módulo KMP con dos targets: `jvm` (usado por el Backend y el CLI) y `androidTarget` (usado por la app Android). Contiene modelos `@Serializable`, DTOs y Ktor Client. Sin compilación JS.
 
 - **App Android (Jetpack Compose):** UI nativa Android implementando Material 3. Arquitectura MVI con ViewModel + StateFlow. Depende de `:shared` vía `androidTarget`.
 
 - **CLI (Kotlin/JVM + Clikt):** Herramienta de terminal para gestionar tareas desde la línea de comandos. Depende de `:shared` vía `jvm` target.
-    
-- **Frontend Web (React + TS + Zustand):** Aplicación TypeScript pura (React 19 + Zustand + MUI). Consume la API Ktor directamente vía `fetch` nativo. Los tipos TypeScript se generan desde la spec OpenAPI del servidor con `openapi-typescript`. **No hay dependencia de módulos Kotlin en `webApp/`**; toda la lógica del frontend es TypeScript estándar.
-    
+
+- **Frontend Web (React + TS + Zustand):** Aplicación TypeScript pura (React 19 + Zustand + MUI). Consume la API Ktor directamente vía `fetch` nativo. Los tipos TypeScript se generan desde la spec OpenAPI del servidor con `openapi-typescript`. **No hay dependencia de módulos Kotlin en `webApp/`**.
 
 ### Flujo de Tipos: Ktor → OpenAPI → webApp
-
-La spec OpenAPI es la fuente de verdad para los tipos del frontend web:
 
 ```
 shared/commonMain  (@Serializable data class Task, Workspace, Project…)
@@ -34,7 +31,7 @@ npx openapi-typescript http://localhost:8080/api.json -o webApp/src/types/api.ts
 webApp/src/  →  import type { Task } from './types/api'  (tipado estricto)
 ```
 
-**Regla operativa**: cuando se modifique un modelo en `shared/commonMain` o un endpoint en `server/`, regenerar los tipos del frontend ejecutando `openapi-typescript`. En CI, este paso precede al build de la web y requiere que el servidor esté corriendo o que la spec se exporte como fichero estático.
+**Regla operativa**: cuando se modifique un modelo en `shared/commonMain` o un endpoint en `server/`, regenerar los tipos del frontend ejecutando `openapi-typescript`.
 
 ## 2. Infraestructura Local (Docker)
 
@@ -60,121 +57,412 @@ docker compose down      # Para (datos persisten en volumen)
 docker compose down -v   # Reset completo del volumen
 ```
 
-La aplicación lee la configuración de conexión desde `server/src/main/resources/application.conf` (excluido de git vía `.gitignore`).
+La configuración de conexión vive en `server/src/main/resources/application.conf` (excluido de git vía `.gitignore`).
 
-## 3. Esquema de Base de Datos (PostgreSQL) y Relaciones
+## 3. Esquema de Base de Datos (PostgreSQL)
 
-El modelo de datos garantiza el aislamiento lógico por Workspace y permite Sprints transversales.
+Todos los PKs son `Long` (BIGSERIAL). Sin excepciones.
 
-### Entidades Core y Acceso
+### Convención de Auditoría
 
-|**Tabla**|**Columnas Principales**|**Relaciones / Notas**|
+Todas las tablas incluyen estas columnas (no se repiten en cada tabla):
+
+| Columna | Tipo | Notas |
 |---|---|---|
-|**Users**|`id` (PK), `email`, `password_hash`, `name`, `created_at`||
-|**Workspaces**|`id` (PK), `name`, `owner_id` (FK), `created_at`|`owner_id` -> `Users.id`|
-|**Workspace_Members**|`workspace_id` (PK/FK), `user_id` (PK/FK), `role`|Relación N:M entre Users y Workspaces.|
-|**Projects**|`id` (PK), `workspace_id` (FK), `project_key` (String), `name`|`project_key` debe ser UNIQUE dentro de un mismo `workspace_id`.|
-|**Project_Members**|`project_id` (PK/FK), `user_id` (PK/FK), `role`|Relación N:M. Define quién tiene acceso al proyecto. **Regla:** `user_id` debe existir previamente en `Workspace_Members`.|
+| `created_at` | TIMESTAMP NOT NULL | Auto-set en INSERT |
+| `created_by` | BIGINT FK → users | Nullable solo en auto-creación del sistema |
+| `updated_at` | TIMESTAMP NOT NULL | Auto-set en INSERT y UPDATE |
+| `updated_by` | BIGINT FK → users | Nullable hasta primera edición |
 
-### Entidades de Metodología Ágil
+Las tablas de relación N:M puras solo incluyen `created_at` y `created_by`.
 
-|**Tabla**|**Columnas Principales**|**Relaciones / Notas**|
+---
+
+### Autenticación
+
+**`users`**
+
+| Columna | Tipo | Restricciones |
 |---|---|---|
-|**Sprints**|`id` (PK), `workspace_id` (FK), `name`, `start_date`, `end_date`, `status`|Pertenecen al Workspace (transversales a proyectos). Estados: _Planning, Active, Closed_.|
-|**Tags**|`id` (PK), `workspace_id` (FK), `name`, `color_hex`|Etiquetas personalizables a nivel de Workspace.|
-|**Task_Statuses**|`id` (PK), `workspace_id` (FK), `name`, `order_index`, `is_default`|Workflows personalizados por Workspace (ToDo, In Progress...).|
+| `id` | BIGSERIAL | PK |
+| `email` | VARCHAR | UNIQUE NOT NULL |
+| `password_hash` | VARCHAR | nullable — null si el usuario usa solo OAuth |
+| `name` | VARCHAR | NOT NULL |
+| `avatar_url` | VARCHAR | nullable — avatar de Google u otro proveedor |
+| `user_type` | ENUM(`regular`, `client`) | NOT NULL DEFAULT `regular` |
 
-### Entidades de Tareas
+**`oauth_accounts`** — Cuentas OAuth vinculadas a un usuario
 
-|**Tabla**|**Columnas Principales**|**Relaciones / Notas**|
+| Columna | Tipo | Restricciones |
 |---|---|---|
-|**Tasks**|`id` (PK UUID), `project_id` (FK), `sprint_id` (FK nullable), `parent_id` (FK nullable)|`parent_id` apunta a `Tasks.id` (para subtareas).|
-||`task_number` (Int), `display_id` (Generado)|`task_number` autoincremental por `project_id`. `display_id` = `project_key` + "-" + `task_number`.|
-||`title`, `description`, `status_id` (FK), `priority`, `estimate`||
-||`start_date`, `due_date`, `git_branch_name`|`git_branch_name` guarda el link a GitLab/GitHub.|
-|**Task_Assignees**|`task_id` (PK/FK), `user_id` (PK/FK)|Relación N:M. **Regla:** `user_id` debe existir en `Project_Members` del proyecto de la tarea.|
-|**Task_Tags**|`task_id` (PK/FK), `tag_id` (PK/FK)|Relación N:M.|
+| `id` | BIGSERIAL | PK |
+| `user_id` | BIGINT | FK → users NOT NULL |
+| `provider` | ENUM(`google`) | NOT NULL |
+| `provider_user_id` | VARCHAR | NOT NULL |
+| `email` | VARCHAR | NOT NULL |
+| `access_token` | VARCHAR | nullable — cifrado AES-256 |
+| `refresh_token` | VARCHAR | nullable — cifrado AES-256 |
+| `token_expires_at` | TIMESTAMP | nullable |
 
-## 4. Estructura de Endpoints Extendida (API Ktor)
+Constraint: `UNIQUE(provider, provider_user_id)`.
 
-Todas las rutas (excepto login/registro) requieren cabecera `Authorization: Bearer <JWT>`.
+**`refresh_tokens`** — Tokens de refresco internos de ZenTrack
 
-### Autenticación & Usuarios
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `user_id` | BIGINT | FK → users NOT NULL |
+| `token_hash` | VARCHAR | NOT NULL — SHA-256 del token |
+| `expires_at` | TIMESTAMP | NOT NULL |
+| `revoked_at` | TIMESTAMP | nullable |
 
-- `POST /api/auth/register` -> Crea un nuevo usuario.
-    
-- `POST /api/auth/login` -> Valida credenciales y devuelve el token JWT.
-    
-- `GET /api/users/me` -> Devuelve los datos del usuario logueado.
-    
+---
+
+### Organizaciones y Teams
+
+**`organizations`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `name` | VARCHAR | NOT NULL |
+| `slug` | VARCHAR | UNIQUE NOT NULL |
+| `plan` | VARCHAR | DEFAULT `free` |
+| `is_personal` | BOOLEAN | NOT NULL DEFAULT FALSE |
+
+**`organization_members`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `org_id` | BIGINT | FK → organizations, PK compuesta |
+| `user_id` | BIGINT | FK → users, PK compuesta |
+| `role` | ENUM(`owner`, `admin`, `member`) | NOT NULL |
+| `joined_at` | TIMESTAMP | NOT NULL |
+
+Constraint: solo usuarios `regular` pueden estar en esta tabla.
+
+**`teams`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `org_id` | BIGINT | FK → organizations NOT NULL |
+| `name` | VARCHAR | NOT NULL |
+| `color_hex` | VARCHAR | nullable |
+
+**`team_members`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `team_id` | BIGINT | FK → teams, PK compuesta |
+| `user_id` | BIGINT | FK → users, PK compuesta |
+| `role` | ENUM(`admin`, `manager`, `member`) | NOT NULL |
+| `joined_at` | TIMESTAMP | NOT NULL |
+
+Constraint: `user_id` debe existir en `organization_members` para la org del team.
+
+---
 
 ### Workspaces
 
-- `GET /api/workspaces` -> Lista los workspaces del usuario.
-    
-- `POST /api/workspaces` -> Crea un nuevo workspace.
-    
-- `GET /api/workspaces/{w_id}/members` -> Lista los miembros del workspace.
-    
+**`workspaces`**
 
-### Sprints & Workflows (Nivel Workspace)
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `org_id` | BIGINT | FK → organizations NOT NULL |
+| `name` | VARCHAR | NOT NULL |
+| `created_by` | BIGINT | FK → users (informativo) |
 
-- `GET /api/workspaces/{w_id}/sprints` -> Lista sprints del workspace.
-    
-- `POST /api/workspaces/{w_id}/sprints` -> Crea un nuevo sprint.
-    
-- `GET /api/workspaces/{w_id}/statuses` -> Obtiene el flujo de estados configurado (Kanban columns).
-    
+**`workspace_teams`** — N:M workspace ↔ team
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `workspace_id` | BIGINT | FK → workspaces, PK compuesta |
+| `team_id` | BIGINT | FK → teams, PK compuesta |
+| `assigned_at` | TIMESTAMP | NOT NULL |
+
+Constraint: team y workspace deben pertenecer a la misma org.
+
+**`workspace_members`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `workspace_id` | BIGINT | FK → workspaces, PK compuesta |
+| `user_id` | BIGINT | FK → users, PK compuesta |
+| `role` | ENUM(`admin`, `manager`, `member`, `client`) | NOT NULL |
+| `joined_at` | TIMESTAMP | NOT NULL |
+
+Constraints: rol `client` → `user_type = client`; roles internos → `user_type = regular`.
+
+---
 
 ### Proyectos
 
-- `GET /api/workspaces/{w_id}/projects` -> Lista los proyectos dentro de un workspace.
-    
-- `POST /api/workspaces/{w_id}/projects` -> Crea un proyecto (requiere `project_key`).
-    
-- `GET /api/projects/{p_id}/members` -> Lista usuarios asignados al proyecto.
-    
-- `POST /api/projects/{p_id}/members` -> Asigna un usuario del workspace al proyecto.
-    
+**`projects`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `workspace_id` | BIGINT | FK → workspaces NOT NULL |
+| `project_key` | VARCHAR | UNIQUE dentro del mismo `workspace_id` |
+| `name` | VARCHAR | NOT NULL |
+| `description` | VARCHAR | nullable |
+
+**`project_members`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `project_id` | BIGINT | FK → projects, PK compuesta |
+| `user_id` | BIGINT | FK → users, PK compuesta |
+| `role` | ENUM(`admin`, `manager`, `member`, `viewer`, `client`) | NOT NULL |
+| `joined_at` | TIMESTAMP | NOT NULL |
+
+---
+
+### Solicitudes de Membresía
+
+**`membership_requests`**
+
+| Columna | Tipo | Restricciones |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `requester_id` | BIGINT | FK → users NOT NULL |
+| `target_type` | ENUM(`organization`, `team`, `workspace`) | NOT NULL |
+| `target_id` | BIGINT | ID del target según `target_type` |
+| `status` | ENUM(`pending`, `approved`, `rejected`) | NOT NULL DEFAULT `pending` |
+| `reviewed_by` | BIGINT | FK → users nullable |
+| `reviewed_at` | TIMESTAMP | nullable |
+
+---
+
+### Entidades Ágiles
+
+**`sprints`** — Nivel workspace
+
+| Columna | Tipo |
+|---|---|
+| `id` | BIGSERIAL PK |
+| `workspace_id` | FK → workspaces |
+| `name` | VARCHAR |
+| `start_date` | DATE |
+| `end_date` | DATE |
+| `status` | ENUM(`planning`, `active`, `closed`) |
+
+**`tags`** — Nivel workspace
+
+| Columna | Tipo |
+|---|---|
+| `id` | BIGSERIAL PK |
+| `workspace_id` | FK → workspaces |
+| `name` | VARCHAR |
+| `color_hex` | VARCHAR |
+
+**`task_statuses`** — Workflows configurables por workspace
+
+| Columna | Tipo |
+|---|---|
+| `id` | BIGSERIAL PK |
+| `workspace_id` | FK → workspaces |
+| `name` | VARCHAR |
+| `order_index` | INT |
+| `is_default` | BOOLEAN |
+
+---
 
 ### Tareas
 
-- `GET /api/workspaces/{w_id}/tasks` -> Obtiene tareas (permite query params para filtrar por `project_id`, `sprint_id`, `assignee`, etc., y montar los diferentes tableros).
-    
-- `POST /api/projects/{p_id}/tasks` -> Crea una tarea, genera el ID unívoco (ej. ZTK-1) y opcionalmente dispara la petición a GitLab/GitHub para crear la rama.
-    
-- `PUT /api/tasks/{t_id}` -> Actualiza campos de la tarea (estado, sprint asignado, descripción).
-    
-- `POST /api/tasks/{t_id}/assignees` -> Asigna un usuario a la tarea (el backend validará que pertenezca a `Project_Members`).
-    
-- `POST /api/tasks/{t_id}/subtasks` -> Crea una subtarea vinculando el `parent_id`.
-    
+**`tasks`**
 
-### Integración Git
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | BIGSERIAL | PK |
+| `project_id` | BIGINT | FK → projects |
+| `sprint_id` | BIGINT nullable | FK → sprints |
+| `parent_id` | BIGINT nullable | FK → tasks (subtareas) |
+| `task_number` | INT | Autoincremental por proyecto — `SELECT FOR UPDATE` |
+| `display_id` | VARCHAR | Generado: `PROJECT_KEY-task_number` — inmutable |
+| `title` | VARCHAR | NOT NULL |
+| `description` | TEXT | nullable |
+| `status_id` | BIGINT | FK → task_statuses |
+| `priority` | ENUM(`low`, `medium`, `high`, `critical`) | |
+| `estimate` | INT nullable | Puntos de historia o horas |
+| `start_date` | DATE nullable | |
+| `due_date` | DATE nullable | |
+| `git_branch_name` | VARCHAR nullable | null = borrador o fallo API Git |
 
-- `POST /api/webhooks/git` -> Endpoint público (protegido por secret/token del proveedor) que recibe eventos _push/merge_. El backend buscará la tarea por el nombre de la rama en el payload y actualizará el `status_id`.
-    
+**`task_assignees`** — N:M tareas ↔ usuarios
 
-## 5. Estructura de Directorios (Monorepo)
+| Columna | Tipo |
+|---|---|
+| `task_id` | BIGINT FK |
+| `user_id` | BIGINT FK |
 
-Plaintext
+**`task_tags`** — N:M tareas ↔ etiquetas
+
+| Columna | Tipo |
+|---|---|
+| `task_id` | BIGINT FK |
+| `tag_id` | BIGINT FK |
+
+---
+
+## 4. Estructura de Endpoints (API Ktor)
+
+Todas las rutas excepto auth requieren `Authorization: Bearer <JWT>`.
+
+### Autenticación
+
+```
+# Email / contraseña
+POST /api/auth/register
+POST /api/auth/login
+
+# OAuth 2.0 — Google (Authorization Code Flow)
+GET  /api/auth/google                         Inicia flujo OAuth → redirect a Google
+GET  /api/auth/google/callback                Callback — intercambia code, emite JWT
+POST /api/auth/refresh                        Renueva JWT con refresh token interno
+POST /api/auth/logout                         Invalida JWT
+
+# Perfil y cuentas OAuth
+GET    /api/users/me
+PUT    /api/users/me
+GET    /api/users/me/oauth                    Lista cuentas OAuth vinculadas
+POST   /api/users/me/oauth/google             Vincula cuenta Google a usuario existente
+DELETE /api/users/me/oauth/{id}              Desvincula cuenta OAuth
+```
+
+### Organizaciones
+
+```
+GET    /api/organizations
+POST   /api/organizations
+GET    /api/organizations/{org_id}
+GET    /api/organizations/{org_id}/members
+POST   /api/organizations/{org_id}/members
+DELETE /api/organizations/{org_id}/members/{uid}
+GET    /api/organizations/{org_id}/requests
+POST   /api/organizations/{org_id}/requests/{id}/approve
+POST   /api/organizations/{org_id}/requests/{id}/reject
+```
+
+### Teams
+
+```
+GET    /api/organizations/{org_id}/teams
+POST   /api/organizations/{org_id}/teams
+GET    /api/teams/{team_id}/members
+POST   /api/teams/{team_id}/members
+DELETE /api/teams/{team_id}/members/{uid}
+GET    /api/teams/{team_id}/requests
+POST   /api/teams/{team_id}/requests/{id}/approve
+POST   /api/teams/{team_id}/requests/{id}/reject
+```
+
+### Workspaces
+
+```
+GET    /api/organizations/{org_id}/workspaces
+POST   /api/organizations/{org_id}/workspaces
+GET    /api/workspaces/{w_id}
+GET    /api/workspaces/{w_id}/members
+POST   /api/workspaces/{w_id}/members
+DELETE /api/workspaces/{w_id}/members/{uid}
+GET    /api/workspaces/{w_id}/requests
+POST   /api/workspaces/{w_id}/requests/{id}/approve
+POST   /api/workspaces/{w_id}/requests/{id}/reject
+GET    /api/workspaces/{w_id}/teams
+POST   /api/workspaces/{w_id}/teams
+DELETE /api/workspaces/{w_id}/teams/{team_id}
+```
+
+### Solicitudes (usuario solicitante)
+
+```
+POST /api/membership-requests
+GET  /api/membership-requests
+```
+
+### Proyectos
+
+```
+GET    /api/workspaces/{w_id}/projects
+POST   /api/workspaces/{w_id}/projects
+GET    /api/projects/{p_id}
+GET    /api/projects/{p_id}/members
+POST   /api/projects/{p_id}/members
+DELETE /api/projects/{p_id}/members/{uid}
+```
+
+### Tareas
+
+```
+GET    /api/workspaces/{w_id}/tasks    (filtros: project_id, sprint_id, assignee, status…)
+POST   /api/projects/{p_id}/tasks
+GET    /api/tasks/{t_id}
+PUT    /api/tasks/{t_id}
+POST   /api/tasks/{t_id}/assignees
+POST   /api/tasks/{t_id}/subtasks
+```
+
+### Sprints, Estados y Tags
+
+```
+GET    /api/workspaces/{w_id}/sprints
+POST   /api/workspaces/{w_id}/sprints
+GET    /api/workspaces/{w_id}/statuses
+POST   /api/workspaces/{w_id}/statuses
+GET    /api/workspaces/{w_id}/tags
+POST   /api/workspaces/{w_id}/tags
+```
+
+### Webhooks Git
+
+```
+POST   /api/webhooks/git    Público, protegido por secret del proveedor
+```
+
+## 5. Estrategia de Autenticación
+
+### OAuth 2.0 Google — Authorization Code Flow
+
+```
+Cliente
+  ├─[1]─► GET /api/auth/google → Redirect 302 → accounts.google.com
+  │                              (client_id, redirect_uri, scope: openid email profile, state)
+  ├─[2]── Usuario aprueba en Google
+  └─[3]─◄── GET /api/auth/google/callback?code=...&state=...
+               ├─ Valida state (anti-CSRF)
+               ├─ Intercambia code → access_token + refresh_token (Google)
+               ├─ Llama Google UserInfo API → email, name, picture, sub
+               ├─ Crea o vincula usuario en BD
+               ├─ Almacena tokens de Google cifrados (AES-256) en oauth_accounts
+               └─► Emite JWT interno de ZenTrack → cliente
+```
+
+- Los tokens de Google **nunca se exponen al cliente**; solo se usa el JWT interno.
+- El `state` se valida para prevenir CSRF.
+- Scope mínimo: `openid email profile`.
+- No se puede desvincular Google si es el único método de login.
+
+## 6. Estructura de Directorios (Monorepo)
 
 ```
 zentrackapp/
 ├── server/                   # Ktor Server API
 │   ├── src/main/kotlin/
-│   │   ├── api/              # Controladores (Routes)
-│   │   ├── core/             # Lógica de negocio (Services) y Auth JWT
-│   │   ├── db/               # Tablas Exposed/Ktorm y Migraciones
+│   │   ├── api/              # Controladores (Routes): auth, orgs, teams, workspaces, projects, tasks
+│   │   ├── core/             # Lógica de negocio (Services) y Auth JWT + OAuth
+│   │   ├── db/               # Tablas Exposed y Migraciones Flyway
 │   │   ├── integrations/     # Clientes HTTP para GitLab/GitHub API
-│   │   └── Application.kt    # Punto de entrada
+│   │   └── Application.kt
 ├── shared/                   # KMP Module — targets: jvm + androidTarget
 │   ├── commonMain/           # Models (@Serializable), DTOs, Ktor Client, Repositories
-│   ├── jvmMain/              # Expect/Actual JVM (UUID, platform APIs) → server + cli
-│   └── androidMain/          # Expect/Actual Android (UUID, platform APIs) → androidApp
+│   ├── jvmMain/              # Expect/Actual JVM → server + cli
+│   └── androidMain/          # Expect/Actual Android → androidApp
 ├── androidApp/               # Jetpack Compose Android
 │   └── src/main/kotlin/
-│       ├── ui/screens/       # Workspaces, Board, Backlog, TaskDetail
+│       ├── ui/screens/       # Orgs, Workspaces, Board, Backlog, TaskDetail
 │       ├── ui/components/    # Material 3 UI Components reutilizables
 │       └── ui/theme/         # ZenTrackTheme, Color, Type
 ├── cli/                      # Kotlin/JVM CLI (Clikt)
@@ -183,16 +471,16 @@ zentrackapp/
 └── webApp/                   # React 19 + TypeScript + Zustand + MUI
     ├── src/
     │   ├── components/       # Componentes MUI reutilizables (presentacionales)
-    │   ├── screens/          # Pantallas (Workspaces, Board, Backlog, TaskDetail)
+    │   ├── screens/          # Pantallas (Orgs, Workspaces, Board, Backlog, TaskDetail)
     │   ├── store/            # Estado global Zustand (un archivo por dominio)
     │   ├── services/         # Llamadas a la API Ktor vía fetch nativo
     │   └── types/            # api.ts generado por openapi-typescript
-    ├── package.json          # Dependencias JS (React, MUI, Zustand, Vite)
+    ├── package.json
     └── tsconfig.json         # TypeScript strict mode
 ```
 
-## 6. Integración con Git y Manejo de Concurrencia
+## 7. Integración con Git y Manejo de Concurrencia
 
-- **Concurrencia de IDs:** Para el incremento de `task_number` por proyecto, se utilizará una transacción con `SELECT ... FOR UPDATE` en la tabla `Projects` para garantizar atomicidad y evitar IDs duplicados bajo alta carga.
-    
-- **Flujo Git:** Ktor hará la petición a la API de Git. Si falla, la BBDD guardará la tarea con `git_branch_name = null` para permitir un reintento posterior.
+- **Concurrencia de IDs:** Para el incremento de `task_number` por proyecto se usa `SELECT ... FOR UPDATE` en la tabla `projects` para garantizar atomicidad y evitar IDs duplicados bajo alta carga.
+
+- **Flujo Git:** Ktor hace la petición a la API de Git. Si falla, la BD guarda la tarea con `git_branch_name = null` para permitir un reintento posterior desde el detalle de la tarea.
