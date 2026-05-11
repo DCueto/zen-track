@@ -7,7 +7,7 @@ object UsersTable : LongIdTable("users") {
     val email        = varchar("email", 255)
     val passwordHash = varchar("password_hash", 255).nullable()
     val name         = varchar("name", 255)
-    val avatarUrl    = varchar("avatar_url", 500).nullable()
+    val avatarUrl    = text("avatar_url").nullable()
     val userType     = varchar("user_type", 50)
     val createdAt    = timestamp("created_at")
     val createdBy    = reference("created_by", UsersTable).nullable()

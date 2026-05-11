@@ -1,0 +1,1 @@
+ALTER TABLE users ALTER COLUMN user_type TYPE TEXT USING user_type::TEXT;

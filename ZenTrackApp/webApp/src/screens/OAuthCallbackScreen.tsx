@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useAuthStore } from '../store/useAuthStore';
 import * as authService from '../services/authService';
@@ -6,8 +6,12 @@ import * as authService from '../services/authService';
 export function OAuthCallbackScreen() {
   const setTokenFromOAuth = useAuthStore((s) => s.setTokenFromOAuth);
   const [error, setError] = useState<string | null>(null);
+  const exchanged = useRef(false);
 
   useEffect(() => {
+    if (exchanged.current) return;
+    exchanged.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');

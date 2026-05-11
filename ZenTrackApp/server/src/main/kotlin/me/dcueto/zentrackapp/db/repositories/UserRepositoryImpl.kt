@@ -59,7 +59,7 @@ class UserRepositoryImpl {
                         it[UsersTable.email] = email
                         it[UsersTable.name] = name
                         it[UsersTable.avatarUrl] = avatarUrl
-                        it[UsersTable.userType] = "human"
+                        it[UsersTable.userType] = "regular"
                         it[UsersTable.createdAt] = Instant.now()
                         it[UsersTable.updatedAt] = Instant.now()
                     }

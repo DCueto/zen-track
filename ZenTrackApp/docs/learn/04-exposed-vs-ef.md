@@ -774,6 +774,92 @@ El formato JDBC (`jdbc:postgresql://host:port/database`) es diferente al formato
 
 ---
 
+## ENUMs de PostgreSQL vs TEXT — por qué ZenTrack usa TEXT
+
+### El problema de impedancia
+
+Cuando defines un ENUM en PostgreSQL:
+
+```sql
+CREATE TYPE user_type AS ENUM ('regular', 'client');
+```
+
+PostgreSQL crea un **tipo de dato propio** en su sistema de tipos. Una columna de ese tipo no acepta `VARCHAR` ni `TEXT` directamente — requiere un cast explícito:
+
+```sql
+INSERT INTO users (user_type) VALUES ('regular');             -- ❌ ERROR: can't cast varchar to user_type
+INSERT INTO users (user_type) VALUES ('regular'::user_type);  -- ✅
+```
+
+Exposed declara columnas con `varchar("user_type", 50)`, que JDBC envía como `character varying`. PostgreSQL lo rechaza con:
+
+```
+ERROR: operator does not exist: user_type = character varying
+```
+
+### La solución "correcta" con Exposed: customEnumeration
+
+Exposed tiene `customEnumeration()` para mapear tipos ENUM de PostgreSQL, pero requiere tratar los valores como `PGobject` (el tipo opaco del driver JDBC de PostgreSQL), no como `String`:
+
+```kotlin
+// Requiere importar org.postgresql.util.PGobject
+val userType = customEnumeration(
+    name = "user_type",
+    sql = "user_type",
+    fromDb = { value -> value.toString() },
+    toDb = { PGobject().apply { type = "user_type"; value = it.toString() } }
+)
+```
+
+Esto funciona pero añade fricción: hay que repetirlo en cada columna ENUM y añadir una dependencia de implementación del driver en la capa de modelo.
+
+**Equivalente en .NET:** Npgsql soporta enums de PostgreSQL pero también requiere configuración explícita (`NpgsqlDataSource.MapEnum<T>()`). Sin eso, EF Core lanza el mismo error.
+
+### La solución pragmática: TEXT + validación en la aplicación
+
+ZenTrack convierte todas las columnas ENUM a `TEXT` con la migración V011:
+
+```sql
+ALTER TABLE users ALTER COLUMN user_type TYPE TEXT USING user_type::TEXT;
+-- (y resto de columnas ENUM)
+```
+
+La validación de valores permitidos vive en Kotlin — `sealed class`, constantes, o convención de código. La BD ya no valida el valor, pero:
+
+| | ENUM en BD | TEXT en BD |
+|---|---|---|
+| Añadir un valor nuevo | `ALTER TYPE ... ADD VALUE` (migración) | Solo cambias el código |
+| Eliminar un valor | Muy difícil en PostgreSQL | Migración + cambio de código |
+| ORM | `customEnumeration` + `PGobject` | `varchar()` estándar |
+| Validación | Duplicada (BD + app) | Solo en app |
+
+En ZenTrack la fuente de verdad de los valores válidos es el código Kotlin, no la BD. Añadir validación a nivel de BD duplica esa responsabilidad sin beneficio real dado que el ORM ya conoce los valores permitidos.
+
+### La migración en ZenTrack
+
+`V011__convert_all_enums_to_text.sql` — pasos necesarios para columnas con DEFAULT o índices parciales que referencian el tipo ENUM:
+
+```sql
+-- 1. Eliminar índice parcial que usa el tipo ENUM
+DROP INDEX IF EXISTS idx_membership_requests_status;
+
+-- 2. Eliminar DEFAULTs que usan literales del tipo ENUM
+ALTER TABLE membership_requests ALTER COLUMN status DROP DEFAULT;
+
+-- 3. Convertir a TEXT
+ALTER TABLE membership_requests ALTER COLUMN status TYPE TEXT USING status::TEXT;
+
+-- 4. Restaurar DEFAULT como literal TEXT
+ALTER TABLE membership_requests ALTER COLUMN status SET DEFAULT 'pending';
+
+-- 5. Recrear el índice parcial (ahora con comparación TEXT)
+CREATE INDEX idx_membership_requests_status ON membership_requests(status) WHERE status = 'pending';
+```
+
+Si omites el paso 1, PostgreSQL falla con `operator does not exist: text = membership_request_status` porque el índice parcial todavía usa la semántica del tipo ENUM.
+
+---
+
 ## Resumen: tabla de equivalencias
 
 | Entity Framework Core / .NET | Exposed DAO / JVM | Notas |
