@@ -56,7 +56,7 @@
 - [x] **[Backend]** Crear `V001__create_users_and_auth.sql`: tablas `users` (password_hash nullable, avatar_url, user_type), `oauth_accounts` (provider, provider_user_id, tokens cifrados), `refresh_tokens`. Todas con columnas de auditoría (`created_at`, `created_by`, `updated_at`, `updated_by`).
 - [x] **[Backend]** Crear `V002__create_organizations.sql`: tablas `organizations` (name, slug UNIQUE, plan, is_personal) y `organization_members` (role ENUM owner/admin/member). Con columnas de auditoría.
 - [x] **[Backend]** Crear `V003__create_teams.sql`: tablas `teams` (org_id, name, color_hex) y `team_members` (role ENUM admin/manager/member). Con columnas de auditoría.
-- [ ] **[Backend]** Crear `V004__create_workspaces.sql`: tablas `workspaces` (org_id), `workspace_teams` (N:M) y `workspace_members` (role ENUM admin/manager/member/client). Con columnas de auditoría.
+- [x] **[Backend]** Crear `V004__create_workspaces.sql`: tablas `workspaces` (org_id), `workspace_teams` (N:M) y `workspace_members` (role ENUM admin/manager/member/client). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V005__create_projects.sql`: tablas `projects` (workspace_id, project_key, constraint UNIQUE(workspace_id, project_key)) y `project_members` (role ENUM admin/manager/member/viewer/client). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V006__create_membership_requests.sql`: tabla `membership_requests` (requester_id, target_type ENUM organization/team/workspace, target_id, status ENUM pending/approved/rejected, reviewed_by, reviewed_at). Con columnas de auditoría.
 - [ ] **[Backend]** Crear `V007__create_agile_entities.sql`: tablas `sprints`, `tags`, `task_statuses`. Con columnas de auditoría.
