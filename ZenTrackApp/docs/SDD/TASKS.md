@@ -40,19 +40,21 @@
 
 ---
 
-## Fase 2: Modelo de Datos v2 — Migraciones y Auditoría
+## Fase 2: Modelo de Datos v2 — Reset y Migraciones desde Cero
 
-> Nuevas tablas del diseño v2. Las migraciones existentes V001–V006 cubren el esquema v1.
+> No hay datos en producción. Se eliminan las migraciones v1 (V001–V006) y se recrea el esquema completo desde cero con el diseño v2.
 
-- [ ] **[Backend]** Migración V007: alterar `users` — `password_hash` nullable, añadir columna `avatar_url VARCHAR`.
-- [ ] **[Backend]** Migración V008: crear `oauth_accounts` (provider, provider_user_id, email, tokens cifrados) y `refresh_tokens` (token_hash, expires_at, revoked_at).
-- [ ] **[Backend]** Migración V009: crear `organizations` (name, slug UNIQUE, plan, is_personal) y `organization_members` (org_id, user_id, role ENUM owner/admin/member).
-- [ ] **[Backend]** Migración V010: crear `teams` (org_id, name, color_hex) y `team_members` (team_id, user_id, role ENUM admin/manager/member).
-- [ ] **[Backend]** Migración V011: añadir columna `org_id` a `workspaces`, crear `workspace_teams` (workspace_id, team_id, assigned_at).
-- [ ] **[Backend]** Migración V012: crear `membership_requests` (requester_id, target_type ENUM org/team/workspace, target_id, status ENUM pending/approved/rejected, reviewed_by, reviewed_at).
-- [ ] **[Backend]** Migración V013: añadir columnas de auditoría (`created_by`, `updated_at`, `updated_by`) a todas las tablas existentes (users, workspaces, workspace_members, projects, project_members, sprints, tags, task_statuses, tasks, task_assignees, task_tags).
-- [ ] **[Backend]** Definir las tablas Exposed para todas las entidades nuevas en `db/tables/`: `OrganizationsTable`, `OrganizationMembersTable`, `TeamsTable`, `TeamMembersTable`, `WorkspaceTeamsTable`, `MembershipRequestsTable`, `OAuthAccountsTable`, `RefreshTokensTable`.
-- [ ] **[Backend]** Actualizar tablas Exposed existentes (`UsersTable`, `WorkspacesTable`) con los nuevos campos.
+- [ ] **[Backend]** Eliminar todas las migraciones Flyway existentes (`server/src/main/resources/db/migration/V001` … `V006`).
+- [ ] **[Infra]** Reset completo de la BD del contenedor: `docker compose down -v && docker compose up -d`.
+- [ ] **[Backend]** Crear `V001__create_users_and_auth.sql`: tablas `users` (password_hash nullable, avatar_url, user_type), `oauth_accounts` (provider, provider_user_id, tokens cifrados), `refresh_tokens`. Todas con columnas de auditoría (`created_at`, `created_by`, `updated_at`, `updated_by`).
+- [ ] **[Backend]** Crear `V002__create_organizations.sql`: tablas `organizations` (name, slug UNIQUE, plan, is_personal) y `organization_members` (role ENUM owner/admin/member). Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V003__create_teams.sql`: tablas `teams` (org_id, name, color_hex) y `team_members` (role ENUM admin/manager/member). Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V004__create_workspaces.sql`: tablas `workspaces` (org_id), `workspace_teams` (N:M) y `workspace_members` (role ENUM admin/manager/member/client). Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V005__create_projects.sql`: tablas `projects` (workspace_id, project_key, constraint UNIQUE(workspace_id, project_key)) y `project_members` (role ENUM admin/manager/member/viewer/client). Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V006__create_membership_requests.sql`: tabla `membership_requests` (requester_id, target_type ENUM organization/team/workspace, target_id, status ENUM pending/approved/rejected, reviewed_by, reviewed_at). Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V007__create_agile_entities.sql`: tablas `sprints`, `tags`, `task_statuses`. Con columnas de auditoría.
+- [ ] **[Backend]** Crear `V008__create_tasks.sql`: tablas `tasks` (con todos los campos incluido git_branch_name), `task_assignees`, `task_tags`. Con columnas de auditoría en `tasks`; `task_assignees` y `task_tags` con `created_at` y `created_by`.
+- [ ] **[Backend]** Reescribir todas las tablas Exposed desde cero en `db/tables/` para reflejar el esquema v2: `UsersTable`, `OAuthAccountsTable`, `RefreshTokensTable`, `OrganizationsTable`, `OrganizationMembersTable`, `TeamsTable`, `TeamMembersTable`, `WorkspacesTable`, `WorkspaceTeamsTable`, `WorkspaceMembersTable`, `ProjectsTable`, `ProjectMembersTable`, `MembershipRequestsTable`, `SprintsTable`, `TagsTable`, `TaskStatusesTable`, `TasksTable`, `TaskAssigneesTable`, `TaskTagsTable`.
 
 ---
 
@@ -126,11 +128,11 @@
 
 ## Fase 6: Workspaces y Proyectos (actualizado v2)
 
-- [x] **[Backend]** Migraciones y modelos para `Users`, `Workspaces`, `Workspace_Members`, `Projects`, `Project_Members` (esquema v1 — completado en Fase 2 v1).
-- [x] **[Backend]** Endpoints CRUD para Workspaces (`GET`, `POST`).
-- [x] **[Backend]** Endpoints para Proyectos con validación de `project_key` único por workspace.
-- [x] **[Shared]** DTOs `@Serializable` y lógica de red para Workspaces y Proyectos.
-- [x] **[Frontend]** UI del Login/Registro (`AuthScreen`).
+- [ ] **[Backend]** ~~Migraciones v1~~ → rehecho en Fase 2. Verificar que las tablas Exposed reescritas compilan con `./gradlew :server:buildFatJar`.
+- [ ] **[Backend]** Revisar y adaptar endpoints CRUD de Workspaces al nuevo esquema v2 (org_id, audit cols). Verificar que `GET /api/workspaces` y `POST /api/workspaces` siguen funcionando.
+- [ ] **[Backend]** Revisar y adaptar endpoints de Proyectos al nuevo esquema v2 (audit cols, constraint UNIQUE actualizado).
+- [ ] **[Shared]** Actualizar DTOs `@Serializable` de Workspaces y Proyectos con los nuevos campos (`orgId`, `createdBy`, etc.). Verificar con `./gradlew :shared:jvmJar`.
+- [x] **[Frontend]** UI del Login/Registro (`AuthScreen`) — completado (pendiente añadir botón Google en Fase 3).
 - [ ] **[Backend]** Actualizar endpoints de Workspaces al nuevo contexto: `GET /api/organizations/{org_id}/workspaces` y `POST /api/organizations/{org_id}/workspaces`.
 - [ ] **[Backend]** Implementar endpoints de `workspace_teams`:
   - `GET /api/workspaces/{w_id}/teams`
