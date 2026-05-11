@@ -128,11 +128,14 @@
 
 ## Fase 6: Workspaces y Proyectos (actualizado v2)
 
-- [ ] **[Backend]** ~~Migraciones v1~~ → rehecho en Fase 2. Verificar que las tablas Exposed reescritas compilan con `./gradlew :server:buildFatJar`.
-- [ ] **[Backend]** Revisar y adaptar endpoints CRUD de Workspaces al nuevo esquema v2 (org_id, audit cols). Verificar que `GET /api/workspaces` y `POST /api/workspaces` siguen funcionando.
-- [ ] **[Backend]** Revisar y adaptar endpoints de Proyectos al nuevo esquema v2 (audit cols, constraint UNIQUE actualizado).
-- [ ] **[Shared]** Actualizar DTOs `@Serializable` de Workspaces y Proyectos con los nuevos campos (`orgId`, `createdBy`, etc.). Verificar con `./gradlew :shared:jvmJar`.
-- [x] **[Frontend]** UI del Login/Registro (`AuthScreen`) — completado (pendiente añadir botón Google en Fase 3).
+- [x] **[Backend]** Crear las migraciones y modelos de BD para `Users`, `Workspaces`, `Workspace_Members`, `Projects` y `Project_Members`.
+- [x] **[Backend]** Implementar endpoints CRUD para Workspaces (`GET`, `POST`).
+- [x] **[Backend]** Implementar endpoints para Proyectos, incluyendo la validación de que el `project_key` sea único por Workspace.
+- [x] **[Shared]** Crear los DTOs `@Serializable` y la lógica de red (Ktor Client) para Workspaces y Proyectos en `commonMain`.
+- [x] **[Frontend]** Crear la UI del Login/Registro (`AuthScreen`).
+- [ ] **[Backend]** Tras el reset de Fase 2, adaptar endpoints de Workspaces al nuevo esquema v2 (añadir `org_id`, audit cols, mover ruta a `/api/organizations/{org_id}/workspaces`).
+- [ ] **[Backend]** Tras el reset de Fase 2, adaptar endpoints de Proyectos al nuevo esquema v2 (audit cols, constraint `UNIQUE(workspace_id, project_key)` explícito).
+- [ ] **[Shared]** Actualizar DTOs de Workspaces y Proyectos con los nuevos campos del esquema v2 (`orgId`, `createdBy`, etc.).
 - [ ] **[Backend]** Actualizar endpoints de Workspaces al nuevo contexto: `GET /api/organizations/{org_id}/workspaces` y `POST /api/organizations/{org_id}/workspaces`.
 - [ ] **[Backend]** Implementar endpoints de `workspace_teams`:
   - `GET /api/workspaces/{w_id}/teams`
