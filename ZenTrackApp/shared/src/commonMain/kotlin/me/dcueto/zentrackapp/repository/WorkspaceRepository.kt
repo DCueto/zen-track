@@ -4,5 +4,5 @@ import me.dcueto.zentrackapp.model.Workspace
 
 interface WorkspaceRepository {
     suspend fun findAllByUser(userId: Long): List<Workspace>
-    suspend fun create(name: String, ownerId: Long): Workspace
+    suspend fun create(orgId: Long, name: String, userId: Long): Workspace
 }

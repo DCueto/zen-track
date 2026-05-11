@@ -3,7 +3,7 @@ package me.dcueto.zentrackapp.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class CreateProjectRequest(val projectKey: String, val name: String)
+data class CreateProjectRequest(val projectKey: String, val name: String, val description: String? = null)
 
 @Serializable
 data class ProjectResponse(
@@ -11,6 +11,6 @@ data class ProjectResponse(
     val workspaceId: Long,
     val projectKey: String,
     val name: String,
-    val taskCounter: Int,
+    val description: String?,
     val createdAt: String
 )

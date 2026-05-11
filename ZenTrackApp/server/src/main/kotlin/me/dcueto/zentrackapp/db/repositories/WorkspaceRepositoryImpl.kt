@@ -1,6 +1,7 @@
 package me.dcueto.zentrackapp.db.repositories
 
 import kotlinx.coroutines.Dispatchers
+import me.dcueto.zentrackapp.db.tables.OrganizationsTable
 import me.dcueto.zentrackapp.db.tables.UsersTable
 import me.dcueto.zentrackapp.db.tables.WorkspaceMembersTable
 import me.dcueto.zentrackapp.db.tables.WorkspacesTable
@@ -22,18 +23,19 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
             WorkspacesTable.selectAll().map { it.toWorkspace() }
         }
 
-    override suspend fun create(name: String, ownerId: Long): Workspace =
+    override suspend fun create(orgId: Long, name: String, userId: Long): Workspace =
         newSuspendedTransaction(Dispatchers.IO) {
-            exec("SET LOCAL app.user_id = '$ownerId'")
+            exec("SET LOCAL app.user_id = '$userId'")
             val workspaceId = WorkspacesTable.insertAndGetId {
+                it[WorkspacesTable.orgId] = EntityID(orgId, OrganizationsTable)
                 it[WorkspacesTable.name] = name
-                it[WorkspacesTable.ownerId] = EntityID(ownerId, UsersTable)
                 it[WorkspacesTable.createdAt] = Instant.now()
+                it[WorkspacesTable.updatedAt] = Instant.now()
             }
             WorkspaceMembersTable.insert {
                 it[WorkspaceMembersTable.workspaceId] = workspaceId
-                it[WorkspaceMembersTable.userId] = EntityID(ownerId, UsersTable)
-                it[WorkspaceMembersTable.role] = "OWNER"
+                it[WorkspaceMembersTable.userId] = EntityID(userId, UsersTable)
+                it[WorkspaceMembersTable.role] = "admin"
             }
             WorkspacesTable.selectAll()
                 .where { WorkspacesTable.id eq workspaceId }
@@ -43,8 +45,8 @@ class WorkspaceRepositoryImpl : WorkspaceRepository {
 
     private fun ResultRow.toWorkspace() = Workspace(
         id = this[WorkspacesTable.id].value,
+        orgId = this[WorkspacesTable.orgId].value,
         name = this[WorkspacesTable.name],
-        ownerId = this[WorkspacesTable.ownerId].value,
         createdAt = this[WorkspacesTable.createdAt].toString()
     )
 }

@@ -16,7 +16,7 @@ class AuthService(
 
     suspend fun login(email: String, password: String): String? {
         val user: UserRecord = userRepository.findByEmail(email) ?: return null
-        val verified = BCrypt.verifyer().verify(password.toCharArray(), user.passwordHash).verified
+        val verified = BCrypt.verifyer().verify(password.toCharArray(), user.passwordHash ?: return null).verified
         if (!verified) return null
         return jwtService.generateToken(userId = user.id)
     }

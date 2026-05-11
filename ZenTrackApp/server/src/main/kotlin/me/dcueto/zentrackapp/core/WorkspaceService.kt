@@ -7,6 +7,6 @@ class WorkspaceService(private val repository: WorkspaceRepository) {
     suspend fun getWorkspacesForUser(userId: Long): List<Workspace> =
         repository.findAllByUser(userId)
 
-    suspend fun createWorkspace(name: String, ownerId: Long): Workspace =
-        repository.create(name, ownerId)
+    suspend fun createWorkspace(orgId: Long, name: String, userId: Long): Workspace =
+        repository.create(orgId, name, userId)
 }

@@ -15,12 +15,12 @@ class WorkspaceApiRepository(private val client: HttpClient) : WorkspaceReposito
             .body<List<WorkspaceResponse>>()
             .map { it.toDomain() }
 
-    override suspend fun create(name: String, ownerId: Long): Workspace =
+    override suspend fun create(orgId: Long, name: String, userId: Long): Workspace =
         client.post("$apiBaseUrl/api/workspaces") {
             withAuth()
-            setBody(CreateWorkspaceRequest(name))
+            setBody(CreateWorkspaceRequest(orgId, name))
         }.body<WorkspaceResponse>().toDomain()
 
     private fun WorkspaceResponse.toDomain() =
-        Workspace(id = id, name = name, ownerId = ownerId, createdAt = createdAt)
+        Workspace(id = id, orgId = orgId, name = name, createdAt = createdAt)
 }

@@ -22,5 +22,5 @@ class ProjectApiRepository(private val client: HttpClient) : ProjectRepository {
         }.body<ProjectResponse>().toDomain()
 
     private fun ProjectResponse.toDomain() =
-        Project(id = id, workspaceId = workspaceId, projectKey = projectKey, name = name, taskCounter = taskCounter, createdAt = createdAt)
+        Project(id = id, workspaceId = workspaceId, projectKey = projectKey, name = name, description = description, createdAt = createdAt)
 }

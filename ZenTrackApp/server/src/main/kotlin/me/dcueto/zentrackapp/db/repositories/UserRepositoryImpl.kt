@@ -11,7 +11,7 @@ import java.time.Instant
 data class UserRecord(
     val id: Long,
     val email: String,
-    val passwordHash: String,
+    val passwordHash: String?,
     val name: String
 )
 
@@ -32,6 +32,7 @@ class UserRepositoryImpl {
                 it[UsersTable.passwordHash] = passwordHash
                 it[UsersTable.name] = name
                 it[UsersTable.createdAt] = Instant.now()
+                it[UsersTable.updatedAt] = Instant.now()
             }
             UsersTable.selectAll()
                 .where { UsersTable.email eq email }

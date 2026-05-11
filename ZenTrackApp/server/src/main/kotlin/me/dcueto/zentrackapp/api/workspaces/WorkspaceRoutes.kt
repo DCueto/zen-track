@@ -27,16 +27,16 @@ fun Route.workspaceRoutes(workspaceService: WorkspaceService) {
         }) {
             val userId = call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asLong()
             val workspaces = workspaceService.getWorkspacesForUser(userId)
-            call.respond(HttpStatusCode.OK, workspaces.map { WorkspaceResponse(it.id, it.name, it.ownerId, it.createdAt) })
+            call.respond(HttpStatusCode.OK, workspaces.map { WorkspaceResponse(it.id, it.orgId, it.name, it.createdAt) })
         }
 
         post({
             tags("Workspaces")
             summary = "Crear workspace"
-            description = "Crea un nuevo workspace con el usuario autenticado como propietario"
+            description = "Crea un nuevo workspace dentro de la organización especificada"
             request {
                 body<CreateWorkspaceRequest> {
-                    description = "Nombre del nuevo workspace"
+                    description = "ID de la organización y nombre del nuevo workspace"
                 }
             }
             response {
@@ -55,8 +55,8 @@ fun Route.workspaceRoutes(workspaceService: WorkspaceService) {
                 call.respond(HttpStatusCode.BadRequest, ErrorResponse("name es requerido"))
                 return@post
             }
-            val workspace = workspaceService.createWorkspace(req.name, ownerId = userId)
-            call.respond(HttpStatusCode.Created, WorkspaceResponse(workspace.id, workspace.name, workspace.ownerId, workspace.createdAt))
+            val workspace = workspaceService.createWorkspace(req.orgId, req.name, userId)
+            call.respond(HttpStatusCode.Created, WorkspaceResponse(workspace.id, workspace.orgId, workspace.name, workspace.createdAt))
         }
     }
 }

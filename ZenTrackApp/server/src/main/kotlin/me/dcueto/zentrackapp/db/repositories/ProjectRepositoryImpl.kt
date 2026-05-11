@@ -32,8 +32,8 @@ class ProjectRepositoryImpl : ProjectRepository {
                     it[ProjectsTable.workspaceId] = EntityID(workspaceId, WorkspacesTable)
                     it[ProjectsTable.projectKey] = projectKey.uppercase()
                     it[ProjectsTable.name] = name
-                    it[ProjectsTable.taskCounter] = 0
                     it[ProjectsTable.createdAt] = Instant.now()
+                    it[ProjectsTable.updatedAt] = Instant.now()
                 }
                 ProjectsTable.selectAll()
                     .where { ProjectsTable.id eq projectId }
@@ -50,7 +50,7 @@ class ProjectRepositoryImpl : ProjectRepository {
         workspaceId = this[ProjectsTable.workspaceId].value,
         projectKey = this[ProjectsTable.projectKey],
         name = this[ProjectsTable.name],
-        taskCounter = this[ProjectsTable.taskCounter],
+        description = this[ProjectsTable.description],
         createdAt = this[ProjectsTable.createdAt].toString()
     )
 }

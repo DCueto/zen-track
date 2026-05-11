@@ -8,6 +8,6 @@ data class Project(
     val workspaceId: Long,
     val projectKey: String,
     val name: String,
-    val taskCounter: Int,
+    val description: String?,
     val createdAt: String
 )

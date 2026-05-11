@@ -42,7 +42,7 @@ fun Route.projectRoutes(projectService: ProjectService) {
                 ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorResponse("workspaceId inválido"))
             val projects = projectService.getProjectsForWorkspace(workspaceId, userId)
             call.respond(HttpStatusCode.OK, projects.map {
-                ProjectResponse(it.id, it.workspaceId, it.projectKey, it.name, it.taskCounter, it.createdAt)
+                ProjectResponse(it.id, it.workspaceId, it.projectKey, it.name, it.description, it.createdAt)
             })
         }
 
@@ -90,7 +90,7 @@ fun Route.projectRoutes(projectService: ProjectService) {
             try {
                 val project = projectService.createProject(workspaceId, key, req.name, userId)
                 call.respond(HttpStatusCode.Created,
-                    ProjectResponse(project.id, project.workspaceId, project.projectKey, project.name, project.taskCounter, project.createdAt))
+                    ProjectResponse(project.id, project.workspaceId, project.projectKey, project.name, project.description, project.createdAt))
             } catch (e: DuplicateProjectKeyException) {
                 call.respond(HttpStatusCode.Conflict, ErrorResponse(e.message!!))
             }
