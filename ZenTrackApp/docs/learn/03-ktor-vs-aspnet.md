@@ -367,3 +367,83 @@ Las funciones `configure*()` de ZenTrack no tienen KDoc porque sus nombres ya di
 | `UseCors` | `CORS` plugin | Cross-Origin Resource Sharing |
 | `UseHttpLogging` | `CallLogging` plugin | Log de requests HTTP |
 | `[Authorize]` | `authenticate("jwt") { }` | Proteger rutas con JWT |
+
+---
+
+## OAuth 2.0 Callback con Ktor Client
+
+En ASP.NET Core usarías `AddGoogleAuthentication()` — un middleware que orquesta todo el flujo OAuth. En Ktor no hay middleware OAuth listo; el flujo se implementa manualmente con **Ktor Client** para llamar a los endpoints de Google.
+
+### Arquitectura del flujo en ZenTrack
+
+```
+Browser → GET /api/auth/google         ← genera state, construye URL, redirige
+Google  → GET /api/auth/google/callback?code=...&state=...
+         ↓
+  1. validateAndConsumeState(state)    ← CSRF check (ConcurrentHashMap con TTL)
+  2. GoogleApiClient.exchangeCodeForTokens(code) ← POST oauth2.googleapis.com/token
+  3. GoogleApiClient.getUserInfo(accessToken)    ← GET googleapis.com/oauth2/v3/userinfo
+  4. userRepository.findOrCreateByOAuth(email)  ← UPSERT en tabla users
+  5. oAuthAccountRepository.upsert(...)          ← UPSERT en oauth_accounts (tokens cifrados)
+  6. jwtService.generateToken(userId)            ← emite JWT de ZenTrack
+```
+
+### Separación de capas (sigue el CLAUDE.md)
+
+| Capa | Clase | Responsabilidad |
+|------|-------|-----------------|
+| `integrations/google/` | `GoogleApiClient` | Llamadas HTTP a Google (no en `core/` ni `api/`) |
+| `core/` | `GoogleOAuthService` | Orquestación del flujo OAuth |
+| `core/` | `TokenEncryptionService` | AES-256-GCM para cifrar tokens en reposo |
+| `db/repositories/` | `OAuthAccountRepositoryImpl` | Persistencia en `oauth_accounts` |
+
+### Ktor Client — submitForm vs HttpClient de System.Net
+
+En C# harías `new HttpClient()` + `PostAsync(url, new FormUrlEncodedContent(...))`.
+
+En Ktor:
+
+```kotlin
+// integrations/google/GoogleApiClient.kt
+private val httpClient = HttpClient(CIO) {
+    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+}
+
+suspend fun exchangeCodeForTokens(code: String): GoogleTokenResponse =
+    httpClient.submitForm(
+        url = "https://oauth2.googleapis.com/token",
+        formParameters = parameters {
+            append("code", code)
+            append("client_id", clientId)
+            append("client_secret", clientSecret)
+            append("redirect_uri", redirectUri)
+            append("grant_type", "authorization_code")
+        }
+    ).body()                         // body<T>() deserializa con kotlinx.serialization
+```
+
+`submitForm` envía un POST con `Content-Type: application/x-www-form-urlencoded`, equivalente a `FormUrlEncodedContent` en .NET.
+
+### AES-256-GCM con javax.crypto
+
+Google exige guardar los tokens en reposo cifrados. El equivalente de `System.Security.Cryptography.Aes` en JVM es `javax.crypto.Cipher` (incluido en el JDK, sin dependencia extra):
+
+```kotlin
+// core/TokenEncryptionService.kt
+class TokenEncryptionService(keyBase64: String) {
+    private val keySpec = SecretKeySpec(Base64.getDecoder().decode(keyBase64), "AES")
+
+    fun encrypt(plaintext: String): String {
+        val iv = ByteArray(12).also { SecureRandom().nextBytes(it) }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, GCMParameterSpec(128, iv))
+        val encrypted = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
+        // IV se antepone al ciphertext; ambos se codifican juntos en Base64
+        return Base64.getEncoder().encodeToString(iv + encrypted)
+    }
+}
+```
+
+El IV (nonce) se genera aleatoriamente por cada cifrado y se almacena junto al ciphertext (igual que en `AesGcm` de .NET). Esto garantiza que cifrar el mismo texto dos veces produce resultados distintos.
+
+La clave se genera con `openssl rand -base64 32` y se guarda en `application.conf` (gitignoreado).

@@ -1,5 +1,8 @@
 package me.dcueto.zentrackapp.core
 
+import me.dcueto.zentrackapp.db.repositories.OAuthAccountRepositoryImpl
+import me.dcueto.zentrackapp.db.repositories.UserRepositoryImpl
+import me.dcueto.zentrackapp.integrations.google.GoogleApiClient
 import java.net.URLEncoder
 import java.time.Instant
 import java.util.UUID
@@ -10,7 +13,12 @@ private const val STATE_TTL_SECONDS = 600L
 
 class GoogleOAuthService(
     private val clientId: String,
-    private val redirectUri: String
+    private val redirectUri: String,
+    private val googleApiClient: GoogleApiClient,
+    private val userRepository: UserRepositoryImpl,
+    private val oAuthAccountRepository: OAuthAccountRepositoryImpl,
+    private val jwtService: JwtService,
+    private val tokenEncryptionService: TokenEncryptionService
 ) {
     private val pendingStates = ConcurrentHashMap<String, Instant>()
 
@@ -32,6 +40,31 @@ class GoogleOAuthService(
     fun validateAndConsumeState(state: String): Boolean {
         val expiry = pendingStates.remove(state) ?: return false
         return Instant.now().isBefore(expiry)
+    }
+
+    suspend fun handleCallback(code: String, state: String): String? {
+        if (!validateAndConsumeState(state)) return null
+
+        val tokenResponse = googleApiClient.exchangeCodeForTokens(code)
+        val userInfo = googleApiClient.getUserInfo(tokenResponse.accessToken)
+
+        val user = userRepository.findOrCreateByOAuth(
+            email = userInfo.email,
+            name = userInfo.name,
+            avatarUrl = userInfo.picture
+        )
+
+        oAuthAccountRepository.upsert(
+            userId = user.id,
+            provider = "google",
+            providerUserId = userInfo.sub,
+            email = userInfo.email,
+            encryptedAccessToken = tokenEncryptionService.encrypt(tokenResponse.accessToken),
+            encryptedRefreshToken = tokenResponse.refreshToken?.let { tokenEncryptionService.encrypt(it) },
+            tokenExpiresAt = Instant.now().plusSeconds(tokenResponse.expiresIn.toLong())
+        )
+
+        return jwtService.generateToken(userId = user.id)
     }
 
     private fun enc(value: String) = URLEncoder.encode(value, "UTF-8")

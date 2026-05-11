@@ -40,6 +40,28 @@ class UserRepositoryImpl {
                 .toUserRecord()
         }
 
+    suspend fun findOrCreateByOAuth(email: String, name: String, avatarUrl: String?): UserRecord =
+        newSuspendedTransaction(Dispatchers.IO) {
+            UsersTable.selectAll()
+                .where { UsersTable.email eq email }
+                .singleOrNull()
+                ?.toUserRecord()
+                ?: run {
+                    UsersTable.insertAndGetId {
+                        it[UsersTable.email] = email
+                        it[UsersTable.name] = name
+                        it[UsersTable.avatarUrl] = avatarUrl
+                        it[UsersTable.userType] = "human"
+                        it[UsersTable.createdAt] = Instant.now()
+                        it[UsersTable.updatedAt] = Instant.now()
+                    }
+                    UsersTable.selectAll()
+                        .where { UsersTable.email eq email }
+                        .single()
+                        .toUserRecord()
+                }
+        }
+
     private fun ResultRow.toUserRecord() = UserRecord(
         id = this[UsersTable.id].value,
         email = this[UsersTable.email],
