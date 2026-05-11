@@ -17,6 +17,14 @@ data class UserRecord(
 
 class UserRepositoryImpl {
 
+    suspend fun findById(id: Long): UserRecord? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            UsersTable.selectAll()
+                .where { UsersTable.id eq id }
+                .singleOrNull()
+                ?.toUserRecord()
+        }
+
     suspend fun findByEmail(email: String): UserRecord? =
         newSuspendedTransaction(Dispatchers.IO) {
             UsersTable.selectAll()

@@ -51,7 +51,7 @@ fun Application.module() {
     val authService = AuthService(userRepository, jwtService, refreshTokenRepository)
     val workspaceService = WorkspaceService(WorkspaceRepositoryImpl())
     val projectService = ProjectService(ProjectRepositoryImpl())
-    val userService = UserService(oAuthAccountRepository)
+    val userService = UserService(oAuthAccountRepository, userRepository)
 
     val googleApiClient = GoogleApiClient(
         clientId = cfg.property("google.clientId").getString(),

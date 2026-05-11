@@ -5,7 +5,9 @@ import me.dcueto.zentrackapp.db.tables.OAuthAccountsTable
 import me.dcueto.zentrackapp.db.tables.UsersTable
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -85,6 +87,19 @@ class OAuthAccountRepositoryImpl {
                 }
                 .singleOrNull()
                 ?.toRecord()
+        }
+
+    suspend fun findById(id: Long): OAuthAccountRecord? =
+        newSuspendedTransaction(Dispatchers.IO) {
+            OAuthAccountsTable.selectAll()
+                .where { OAuthAccountsTable.id eq id }
+                .singleOrNull()
+                ?.toRecord()
+        }
+
+    suspend fun deleteById(id: Long) =
+        newSuspendedTransaction(Dispatchers.IO) {
+            OAuthAccountsTable.deleteWhere { OAuthAccountsTable.id eq id }
         }
 
     private fun ResultRow.toRecord() = OAuthAccountRecord(
